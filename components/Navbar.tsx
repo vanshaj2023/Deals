@@ -2,6 +2,8 @@
 import { UserButton, useUser } from '@clerk/nextjs'
 import Image from 'next/image'
 import Link from 'next/link'
+import Wishlist from './Wishlist'
+import Search from './Search'
 
 const navIcons = [
   { src: '/assets/icons/search.svg', alt: 'search' },
@@ -28,7 +30,7 @@ const Navbar = () => {
         </Link>
 
         <div className="flex items-center gap-5">
-          {navIcons.map((icon) => (
+          {/* {navIcons.map((icon) => (
             <Image
               key={icon.alt}
               src={icon.src}
@@ -37,11 +39,33 @@ const Navbar = () => {
               height={28}
               className="object-contain"
             />
-          ))}
-          <Link href={'/'}> 
-          <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full">
+          ))} */}
+          <Link href={'/search'}>
+          <Image
+              key='search'
+              src='/assets/icons/search.svg'
+              alt='search'
+              width={28}
+              height={28}
+              onClick={Search}
+              className="object-contain cursor-pointer"
+            />
+            </Link>
+            <Link href={'/wishlist'}>
+          <Image
+              key='heart'
+              src= '/assets/icons/black-heart.svg'
+              alt= 'heart'
+              width={28}
+              height={28}
+              onClick={Wishlist}
+              className="object-contain cursor-pointer"
+            />
+            </Link>
+          <Link href={'/deals'}> 
+          <button className="bg-black hover:bg-black-100 text-white font-bold py-2 px-4 rounded-full" >
             {isSignedIn?
-            'Home':
+            'Deals':
             'Login'
           }
           </button>

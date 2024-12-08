@@ -5,10 +5,10 @@ import { Inter, Space_Grotesk } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 
 const inter = Inter({ subsets: ['latin'] })
-const spaceGrotesk = Space_Grotesk({ 
-  subsets: ['latin'], 
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700']
- })
+})
 
 export const metadata: Metadata = {
   title: 'Pricewise',
@@ -22,14 +22,14 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-    <html lang="en">
-      <body className={inter.className}>
-        <main className="max-w-10xl mx-auto">
-          <Navbar />
-          {children}
-        </main>
-      </body>
-    </html>
+      <html lang="en">
+        <body className={inter.className}>
+          <main className="max-w-10xl mx-auto">
+            <Navbar />
+            {children}
+          </main>
+        </body>
+      </html>
     </ClerkProvider>
   )
 }
