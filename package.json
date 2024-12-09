@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "tsc", 
+    "start": "tsc && node dist/bot.js",
     "lint": "next lint",
     "start-bot": "node scripts/bot.js"
   },
@@ -29,6 +29,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20",
+    "@types/node-telegram-bot-api": "^0.64.7",
     "@types/nodemailer": "^6.4.15",
     "@types/react": "^18",
     "@types/react-dom": "^18",
