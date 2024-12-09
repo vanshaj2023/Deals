@@ -38,11 +38,9 @@ export function extractCurrency(element: any) {
 
 // Extracts description from two possible elements from amazon
 export function extractDescription($: any) {
-  // these are possible elements holding description of the product
   const selectors = [
     ".a-unordered-list .a-list-item",
     ".a-expander-content p",
-    // Add more selectors here if needed
   ];
 
   for (const selector of selectors) {
@@ -56,11 +54,10 @@ export function extractDescription($: any) {
     }
   }
 
-  // If no matching elements were found, return an empty string
   return "";
 }
 
-export function getHighestPrice(priceList: PriceHistoryItem[]) {
+export function getHighestPrice(priceList: PriceHistoryItem[]): number {
   let highestPrice = priceList[0];
 
   for (let i = 0; i < priceList.length; i++) {
@@ -72,7 +69,7 @@ export function getHighestPrice(priceList: PriceHistoryItem[]) {
   return highestPrice.price;
 }
 
-export function getLowestPrice(priceList: PriceHistoryItem[]) {
+export function getLowestPrice(priceList: PriceHistoryItem[]): number {
   let lowestPrice = priceList[0];
 
   for (let i = 0; i < priceList.length; i++) {
@@ -84,7 +81,7 @@ export function getLowestPrice(priceList: PriceHistoryItem[]) {
   return lowestPrice.price;
 }
 
-export function getAveragePrice(priceList: PriceHistoryItem[]) {
+export function getAveragePrice(priceList: PriceHistoryItem[]): number {
   const sumOfPrices = priceList.reduce((acc, curr) => acc + curr.price, 0);
   const averagePrice = sumOfPrices / priceList.length || 0;
 
@@ -94,7 +91,7 @@ export function getAveragePrice(priceList: PriceHistoryItem[]) {
 export const getEmailNotifType = (
   scrapedProduct: Product,
   currentProduct: Product
-) => {
+): keyof typeof Notification | null => {
   const lowestPrice = getLowestPrice(currentProduct.priceHistory);
 
   if (scrapedProduct.currentPrice < lowestPrice) {
@@ -110,7 +107,7 @@ export const getEmailNotifType = (
   return null;
 };
 
-export const formatNumber = (num: number = 0) => {
+export const formatNumber = (num: number = 0): string => {
   return num.toLocaleString(undefined, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,

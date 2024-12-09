@@ -18,7 +18,13 @@ export async function scrapeAndStoreProduct(productUrl: string) {
 
     if (!scrapedProduct) return;
 
-    let product = scrapedProduct;
+    let product = {
+      ...scrapedProduct, createdAt: new Date(), // Set createdAt field here 
+      priceHistory: [{
+        price: scrapedProduct.currentPrice,
+        date: new Date()
+      }], // Initialize priceHistory 
+    };
 
     const existingProduct = await Product.findOne({ url: scrapedProduct.url });
 
@@ -34,6 +40,7 @@ export async function scrapeAndStoreProduct(productUrl: string) {
         lowestPrice: getLowestPrice(updatedPriceHistory),
         highestPrice: getHighestPrice(updatedPriceHistory),
         averagePrice: getAveragePrice(updatedPriceHistory),
+        createdAt: existingProduct.createdAt,
       };
     }
 
