@@ -1,7 +1,8 @@
 import Modal from "@/components/Modal";
 import PriceInfoCard from "@/components/PriceInfoCard";
 import ProductCard from "@/components/ProductCard";
-import ProductHeart from "@/components/ProductHeart";
+import ShareButton from "@/components/ShareButton";
+// import ProductHeart from "@/components/ProductHeart";
 import { getProductById, getSimilarProducts } from "@/lib/actions"
 import { formatNumber } from "@/lib/utils";
 import { Product } from "@/types";
@@ -63,29 +64,26 @@ const ProductDetails = async ({ params: { id } }: Props) => {
                 />
 
                 <p className="text-base font-semibold text-[#D46F77]">
-                  {product.reviewsCount}
+                  1K+
                 </p>
               </div>
               {/* <ProductHeart product={product} onWishlistToggle={handleWishlistToggle}/> */}
 
 
-              <div className="p-2 bg-white-200 rounded-10">
+              <div className="flex gap-2 p-2 bg-white-200 rounded-10">
                 <Image
                   src="/assets/icons/bookmark.svg"
                   alt="bookmark"
                   width={20}
                   height={20}
                 />
+                <p className="text-base font-semibold">
+                  100+
+                </p>
               </div>
 
-              <div className="p-2 bg-white-200 rounded-10">
-                <Image
-                  src="/assets/icons/share.svg"
-                  alt="share"
-                  width={20}
-                  height={20}
-                />
-              </div>
+              <ShareButton/>
+
             </div>
           </div>
 
@@ -101,17 +99,7 @@ const ProductDetails = async ({ params: { id } }: Props) => {
 
             <div className="flex flex-col gap-4">
               <div className="flex gap-3">
-                <div className="product-stars">
-                  <Image
-                    src="/assets/icons/star.svg"
-                    alt="star"
-                    width={16}
-                    height={16}
-                  />
-                  <p className="text-sm text-primary-orange font-semibold">
-                    {product.stars || '25'}
-                  </p>
-                </div>
+               
 
                 <div className="product-reviews">
                   <Image
@@ -121,13 +109,13 @@ const ProductDetails = async ({ params: { id } }: Props) => {
                     height={16}
                   />
                   <p className="text-sm text-secondary font-semibold">
-                    {product.reviewsCount} Reviews
+                    100+ Positive Reviews
                   </p>
                 </div>
               </div>
 
               <p className="text-sm text-black opacity-50">
-                <span className="text-primary-green font-semibold">93% </span> of
+                <span className="text-primary-green font-semibold">{Math.floor(10 * Math.random() + 85)}% </span> of
                 buyers have recommeded this.
               </p>
             </div>
