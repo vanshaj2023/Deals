@@ -31,7 +31,9 @@ export async function scrapeAndStoreProduct(productUrl: string) {
     if (existingProduct) {
       const updatedPriceHistory: any = [
         ...existingProduct.priceHistory,
-        { price: scrapedProduct.currentPrice }
+        { price: scrapedProduct.currentPrice,
+          originalPrice: scrapedProduct.originalPrice
+         }
       ];
 
       product = {
@@ -40,7 +42,7 @@ export async function scrapeAndStoreProduct(productUrl: string) {
         lowestPrice: getLowestPrice(updatedPriceHistory),
         highestPrice: getHighestPrice(updatedPriceHistory),
         averagePrice: getAveragePrice(updatedPriceHistory),
-        createdAt: existingProduct.createdAt,
+        createdAt: new Date()
       };
     }
 
