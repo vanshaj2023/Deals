@@ -105,7 +105,7 @@ const Home = () => {
 
             <h1 className="head-text" ref={textRef}>
               Unleash the Power of
-              <span className="text-primary"> PriceWise</span>
+              <span className="text-primary"> PriceIQ</span>
             </h1>
 
             <p className="mt-6" ref={subTextRef}>
@@ -133,7 +133,7 @@ const Home = () => {
 
       <section className="cta-section px-6 md:px-20 py-12" ref={ctaRef}>
         <div className="flex flex-col items-center">
-          <h2 className="section-text text-center">Get Started with PriceWise Today!</h2>
+          <h2 className="section-text text-center">Get Started with PriceIQ Today!</h2>
           <button 
             className="bg-primary hover:bg-primary-100 text-white font-bold py-2 px-4 rounded-full mt-6"
             onClick={handleButtonClick}

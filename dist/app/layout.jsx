@@ -14,7 +14,7 @@ var spaceGrotesk = (0, google_1.Space_Grotesk)({
     weight: ['300', '400', '500', '600', '700']
 });
 exports.metadata = {
-    title: 'Pricewise',
+    title: 'PriceIQ',
     description: 'Track product prices effortlessly and save money on your online shopping.',
 };
 function RootLayout(_a) {

@@ -62,7 +62,7 @@ var Home = function () { return __awaiter(void 0, void 0, void 0, function () {
 
             <h1 className="head-text">
               Unleash the Power of
-              <span className="text-primary"> PriceWise</span>
+              <span className="text-primary"> PriceIQ</span>
             </h1>
 
             <p className="mt-6">

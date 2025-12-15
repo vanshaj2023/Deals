@@ -22,7 +22,7 @@ var Navbar = function () {
           <image_1.default src="/assets/icons/logo.svg" width={27} height={27} alt="logo"/>
 
           <p className="nav-logo">
-            Price<span className='text-primary'>Wise</span>
+            Price<span className='text-primary'>IQ</span>
           </p>
         </link_1.default>
 

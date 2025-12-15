@@ -45,7 +45,7 @@ const Navbar = () => {
             alt="logo"
           />
           <p className="nav-logo">
-            Price<span className='text-primary'>Wise</span>
+            Price<span className='text-primary'>IQ</span>
           </p>
         </Link>
 
