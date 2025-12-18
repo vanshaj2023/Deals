@@ -1,11 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverActions: true,
     serverComponentsExternalPackages: ['mongoose']
   },
   images: {
-    domains: ['m.media-amazon.com','www.imagineonline.store']
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'm.media-amazon.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.imagineonline.store',
+      },
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+      }
+    ]
   }
 }
 

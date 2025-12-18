@@ -1,8 +1,10 @@
 import Navbar from '@/components/Navbar'
+import Provider from '@/components/provider'
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
+import { Toaster } from 'sonner'
 
 const inter = Inter({ subsets: ['latin'] })
 const spaceGrotesk = Space_Grotesk({
@@ -24,10 +26,13 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={inter.className}>
-          <main className="max-w-10xl mx-auto">
-            <Navbar />
-            {children}
-          </main>
+          <Provider>
+            <main className="max-w-10xl mx-auto">
+              <Navbar />
+              {children}
+            </main>
+            <Toaster position="top-right" />
+          </Provider>
         </body>
       </html>
     </ClerkProvider>

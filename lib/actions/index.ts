@@ -16,7 +16,12 @@ export async function scrapeAndStoreProduct(productUrl: string) {
 
     const scrapedProduct = await scrapeAmazonProduct(productUrl);
 
-    if (!scrapedProduct) return;
+    if (!scrapedProduct) {
+      console.log('⚠️ Scraper returned no data');
+      return;
+    }
+    
+    console.log('📦 Scraped product received, processing...');
 
     let product = {
       ...scrapedProduct, createdAt: new Date(), // Set createdAt field here 
@@ -52,8 +57,22 @@ export async function scrapeAndStoreProduct(productUrl: string) {
       { upsert: true, new: true }
     );
 
-    await revalidatePath(`/products/${newProduct._id}`);
+    console.log('💾 Product saved to MongoDB:', newProduct._id);
+    console.log('📊 Product details:', {
+      title: newProduct.title,
+      price: newProduct.currentPrice,
+      productType: newProduct.productType
+    });
+
+    // Only revalidate if running in Next.js context (not from bot script)
+    try {
+      await revalidatePath(`/products/${newProduct._id}`);
+    } catch (revalidateError) {
+      // Ignore revalidation errors when running outside Next.js (e.g., from bot)
+      console.log('⚠️ Skipping revalidatePath (not in Next.js context)');
+    }
   } catch (error: any) {
+    console.error('❌ Error in scrapeAndStoreProduct:', error.message);
     throw new Error(`Failed to create/update product: ${error.message}`);
   }
 }

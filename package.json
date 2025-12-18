@@ -1,24 +1,23 @@
 {
-  "name": "priceIQ",
+  "name": "priceiq",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "tsc && node dist/bot.js",
+    "start": "tsc --project tsconfig.bot.json && node dist/scripts/bot.js",
     "lint": "next lint",
-    "start-bot": "node scripts/bot.ts"
+    "start-bot": "node scripts/bot.ts",
+    "seed-trending": "npx ts-node scripts/seed-trending.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^5.6.4",
     "@headlessui/react": "^1.7.17",
-    "@neondatabase/serverless": "^1.0.0",
     "@radix-ui/react-tabs": "^1.1.11",
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.9",
     "cheerio": "^1.0.0",
     "dotenv": "^16.4.7",
-    "drizzle-orm": "^0.41.0",
     "gsap": "^3.12.7",
     "lucide-react": "^0.511.0",
     "mongoose": "^7.8.3",
@@ -41,7 +40,6 @@
     "@types/nodemailer": "^6.4.15",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "drizzle-kit": "^0.30.6",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"

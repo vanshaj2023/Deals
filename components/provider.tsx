@@ -1,38 +1,43 @@
 "use client";
 import { useUser } from "@clerk/nextjs";
 import axios from "axios";
-import { useEffect, ReactNode } from "react";
+import { useEffect, ReactNode, useState } from "react";
 
 function Provider({ children }: { children: ReactNode }) {
-    const { user } = useUser();
+    const { user, isLoaded } = useUser();
+    const [synced, setSynced] = useState(false);
 
     const CheckIsNewUser = async () => {
-        if (!user) return;
+        if (!isLoaded || !user || synced) return;
     
-        console.log("User object:", user); // Debugging
+        console.log("🔄 Syncing user to MongoDB:", user.primaryEmailAddress?.emailAddress);
     
         try {
             const result = await axios.post("/api/user", {
-                fullname: user.fullName, // Clerk uses `fullName`
+                name: user.fullName || user.username || "User",
+                email: user.primaryEmailAddress?.emailAddress,
+                image: user.imageUrl,
+                // Support legacy Clerk format too
+                fullname: user.fullName,
                 primaryEmailAddress: {
-                    emailAddress: user.primaryEmailAddress?.emailAddress || null,
+                    emailAddress: user.primaryEmailAddress?.emailAddress,
                 },
             });
     
-            console.log("API Response:", result.data);
+            console.log("User synced to MongoDB:", result.data);
+            setSynced(true);
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                console.error("Error checking user:", error.response?.data || error.message);
+                console.error("Error syncing user:", error.response?.data || error.message);
             } else {
-                console.error("Error checking user:", (error as Error).message);
+                console.error("Error syncing user:", (error as Error).message);
             }
         }
     };
-    
 
     useEffect(() => {
         CheckIsNewUser();
-    }, [user]);
+    }, [user, isLoaded]);
 
     return <>{children}</>;
 }

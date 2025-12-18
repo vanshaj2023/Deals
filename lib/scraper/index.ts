@@ -7,11 +7,15 @@ import { extractCurrency, extractDescription, extractPrice } from '../utils';
 export async function scrapeAmazonProduct(url: string) {
   if(!url) return;
 
+  console.log('🔍 Starting scrape for:', url);
+
   // BrightData proxy configuration
   const username = String(process.env.BRIGHT_DATA_USERNAME);
   const password = String(process.env.BRIGHT_DATA_PASSWORD);
   const port = 22225;
   const session_id = (1000000 * Math.random()) | 0;
+
+  console.log('🔐 BrightData credentials configured:', username ? 'Yes' : 'No');
 
   const options = {
     auth: {
@@ -25,6 +29,7 @@ export async function scrapeAmazonProduct(url: string) {
 
   try {
     // Fetch the product page
+    console.log('📡 Fetching page via BrightData proxy...');
     const response = await axios.get(url, options);
     const $ = cheerio.load(response.data);
 
@@ -77,10 +82,14 @@ export async function scrapeAmazonProduct(url: string) {
       lowestPrice: Number(currentPrice) || Number(originalPrice),
       highestPrice: Number(originalPrice) || Number(currentPrice),
       averagePrice: Number(currentPrice) || Number(originalPrice),
+      productType: 'scraped' as const, // Mark as scraped product type
     }
 
+    console.log('✅ Scraped product:', title);
+    console.log('💰 Price:', data.currentPrice, data.currency);
     return data;
   } catch (error: any) {
-    console.log(error);
+    console.error('❌ Scraper error:', error.message);
+    console.error('Stack:', error.stack);
   }
 }

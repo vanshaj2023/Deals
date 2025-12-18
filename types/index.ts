@@ -7,6 +7,8 @@ export type User = {
   email: string;
 };
 
+export type ProductType = 'scraped' | 'promoted';
+
 export type Product = {
   _id?: string;
   url: string;
@@ -27,6 +29,12 @@ export type Product = {
   isOutOfStock: Boolean;
   createdAt: Date;
   users?: User[];
+  productType: ProductType; // 'scraped' = from Amazon/bot, 'promoted' = manually added trending
+  isPromoted?: boolean;
+  promotedBy?: string;
+  promotedAt?: Date;
+  about?: string;
+  link?: string;
 };
 
 export type NotificationType =
