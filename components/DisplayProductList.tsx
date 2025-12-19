@@ -1,20 +1,6 @@
 import React from 'react';
 import ProductCard from './ProductCard';
-
-interface Product {
-  _id: string;
-  title: string;
-  currentPrice: number;
-  originalPrice?: number;
-  currency: string;
-  category?: string;
-  image: string;
-  url?: string;
-  stars?: number;
-  reviewsCount?: number;
-  discountRate?: number;
-  isOutOfStock?: boolean;
-}
+import { Product } from '@/types';
 
 interface DisplayProductListProps {
   productList?: Product[];

@@ -26,7 +26,7 @@ export type Product = {
   category: string;
   reviewsCount: number;
   stars: number;
-  isOutOfStock: Boolean;
+  isOutOfStock: boolean;
   createdAt: Date;
   users?: User[];
   productType: ProductType; // 'scraped' = from Amazon/bot, 'promoted' = manually added trending
