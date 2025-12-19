@@ -6,15 +6,7 @@ import { Search } from "lucide-react";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import DisplayProductList from "@/components/DisplayProductList";
 import gsap from "gsap";
-
-interface Product {
-  id: string;
-  title: string;
-  price: number;
-  category?: string;
-  image?: string;
-  link?: string;
-}
+import { Product } from "@/types";
 
 const ExplorePage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
