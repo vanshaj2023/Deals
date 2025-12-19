@@ -10,7 +10,7 @@ export type User = {
 export type ProductType = 'scraped' | 'promoted';
 
 export type Product = {
-  _id?: string;
+  _id: string;
   url: string;
   currency: string;
   image: string;
