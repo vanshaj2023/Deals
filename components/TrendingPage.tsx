@@ -69,7 +69,7 @@ const TrendingPage = () => {
         <ProductCardItem 
           product={product} 
           key={index} 
-          useremail={user?.primaryEmailAddress?.emailAddress || ""} 
+          useremail={session?.user?.email || ""} 
         />
       ))}
     </div>

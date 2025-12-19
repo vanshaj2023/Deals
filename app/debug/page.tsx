@@ -75,7 +75,7 @@ export default function DebugPage() {
 
   useEffect(() => {
     checkAdminAccess();
-  }, [isLoaded, user]);
+  }, [status, session]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -84,7 +84,7 @@ export default function DebugPage() {
   }, [isAdmin]);
 
   // Show loading while checking access
-  if (checkingAccess || !isLoaded) {
+  if (checkingAccess || status === 'loading') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
         <div className="bg-white rounded-2xl shadow-2xl p-12 text-center">
@@ -96,7 +96,7 @@ export default function DebugPage() {
   }
 
   // Show access denied if not logged in
-  if (!user) {
+  if (!session?.user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center p-8">
         <div className="bg-white rounded-2xl shadow-2xl p-12 text-center max-w-md">
