@@ -38,7 +38,7 @@ const UserListing: React.FC = () => {
       setError(null); // Reset previous errors
 
       const result = await axios.get(
-        `/api/trending?email=${user?.primaryEmailAddress?.emailAddress}`
+        `/api/trending?email=${session?.user?.email}`
       );
 
       console.log("API Response:", result.data); // Debug API response
