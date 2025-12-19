@@ -13,25 +13,10 @@ const DisplayProductList = ({ productList = [], useremailId = '' }: DisplayProdu
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {productList.length > 0 ? (
           productList.map((product) => {
-            const cleanProduct = {
-              _id: product._id,
-              title: product.title,
-              currentPrice: product.currentPrice,
-              originalPrice: product.originalPrice,
-              currency: product.currency,
-              category: product.category,
-              image: product.image,
-              url: product.url,
-              stars: product.stars,
-              reviewsCount: product.reviewsCount,
-              discountRate: product.discountRate,
-              isOutOfStock: product.isOutOfStock,
-            };
-            
             return (
               <ProductCard 
                 key={product._id}
-                product={cleanProduct as any}
+                product={product}
                 showWishlist={!!useremailId}
               />
             );

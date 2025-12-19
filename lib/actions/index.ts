@@ -5,7 +5,7 @@ import Product from "../models/product.model";
 import { connectToDB } from "../mongoose";
 import { scrapeAmazonProduct } from "../scraper";
 import { getAveragePrice, getHighestPrice, getLowestPrice } from "../utils";
-import { User } from "@/types";
+import { User, Product as ProductType } from "@/types";
 import { generateEmailBody, sendEmail } from "../nodemailer";
 
 export async function scrapeAndStoreProduct(productUrl: string) {
@@ -77,7 +77,7 @@ export async function scrapeAndStoreProduct(productUrl: string) {
   }
 }
 
-export async function getProductById(productId: string) {
+export async function getProductById(productId: string): Promise<ProductType | null | undefined> {
   try {
     await connectToDB();
 
@@ -92,7 +92,7 @@ export async function getProductById(productId: string) {
   }
 }
 
-export async function getAllProducts() {
+export async function getAllProducts(): Promise<ProductType[] | undefined> {
   try {
     await connectToDB();
 
@@ -104,7 +104,7 @@ export async function getAllProducts() {
   }
 }
 
-export async function getSimilarProducts(productId: string) {
+export async function getSimilarProducts(productId: string): Promise<ProductType[] | null | undefined> {
   try {
     await connectToDB();
 
