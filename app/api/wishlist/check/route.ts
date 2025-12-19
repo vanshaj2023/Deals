@@ -3,6 +3,8 @@ import Wishlist from "@/lib/models/wishlist.model";
 import User from "@/lib/models/user.model";
 import { NextResponse } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);

@@ -2,6 +2,8 @@ import { connectToDB } from "@/lib/mongoose";
 import User from "@/lib/models/user.model";
 import { NextResponse } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     // console.log("User API called");

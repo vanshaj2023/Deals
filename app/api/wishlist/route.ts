@@ -5,6 +5,8 @@ import User from "@/lib/models/user.model";
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     console.log("📥 Wishlist POST called");
