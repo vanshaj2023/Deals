@@ -34,17 +34,38 @@ exports.extractCurrency = extractCurrency;
 // Extracts description from two possible elements from amazon
 function extractDescription($) {
     const selectors = [
+        "#feature-bullets ul li span.a-list-item",
         ".a-unordered-list .a-list-item",
         ".a-expander-content p",
+        "#productDescription p",
     ];
     for (const selector of selectors) {
         const elements = $(selector);
         if (elements.length > 0) {
             const textContent = elements
-                .map((_, element) => $(element).text().trim())
+                .map((_, element) => {
+                let text = $(element).text().trim();
+                // Remove common noise patterns
+                text = text.replace(/\(function\(\)[^\}]*\}\);/g, ''); // Remove JavaScript
+                text = text.replace(/P\.when\([^\)]*\);/g, ''); // Remove P.when calls
+                text = text.replace(/\.review-text-read-more[^\n]*$/gm, ''); // Remove read-more text
+                text = text.replace(/Read more|Helpful|Report/g, ''); // Remove UI text
+                text = text.replace(/\s+/g, ' '); // Normalize whitespace
+                return text;
+            })
                 .get()
-                .join("\n");
-            return textContent;
+                .filter((text) => text.length > 10) // Remove very short entries
+                .join(". ");
+            // Clean up the final text
+            let cleanText = textContent
+                .replace(/\.\s*\./g, '.') // Remove double periods
+                .replace(/\s+/g, ' ') // Normalize whitespace
+                .trim();
+            // Limit to reasonable length (first 500 words or ~2500 chars)
+            if (cleanText.length > 2500) {
+                cleanText = cleanText.substring(0, 2500).trim() + '...';
+            }
+            return cleanText;
         }
     }
     return "";

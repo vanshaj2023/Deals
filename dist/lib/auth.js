@@ -27,12 +27,15 @@ exports.authOptions = {
                 }
                 await (0, mongoose_1.connectToDB)();
                 const user = await user_model_1.default.findOne({ email: credentials.email });
-                if (!user || !user.password) {
-                    throw new Error('Invalid email or password');
+                if (!user) {
+                    throw new Error('No account found with this email');
+                }
+                if (!user.password) {
+                    throw new Error('This account uses Google sign-in. Please sign in with Google or reset your password.');
                 }
                 const isPasswordValid = await bcryptjs_1.default.compare(credentials.password, user.password);
                 if (!isPasswordValid) {
-                    throw new Error('Invalid email or password');
+                    throw new Error('Invalid password');
                 }
                 return {
                     id: user._id.toString(),
@@ -48,10 +51,8 @@ exports.authOptions = {
         async signIn({ user, account, profile }) {
             if ((account === null || account === void 0 ? void 0 : account.provider) === 'google') {
                 await (0, mongoose_1.connectToDB)();
-                // Check if user exists
                 let existingUser = await user_model_1.default.findOne({ email: user.email });
                 if (!existingUser) {
-                    // Create new user for Google OAuth
                     existingUser = await user_model_1.default.create({
                         name: user.name,
                         email: user.email,
@@ -59,6 +60,17 @@ exports.authOptions = {
                         role: 'user',
                         emailVerified: new Date(),
                     });
+                    console.log('New Google user created:', existingUser.email);
+                }
+                else {
+                    if (!existingUser.image && user.image) {
+                        existingUser.image = user.image;
+                    }
+                    if (!existingUser.emailVerified) {
+                        existingUser.emailVerified = new Date();
+                    }
+                    await existingUser.save();
+                    console.log('Linked Google account to existing user:', existingUser.email);
                 }
                 return true;
             }

@@ -16,7 +16,7 @@ const userSchema = new mongoose_1.default.Schema({
     },
     password: {
         type: String,
-        required: false // Optional for OAuth users
+        required: false
     },
     image: {
         type: String
@@ -40,9 +40,7 @@ const userSchema = new mongoose_1.default.Schema({
 }, {
     timestamps: true
 });
-// Index for faster email lookups
 userSchema.index({ email: 1 });
-// Ensure indexes are properly synced (optional, for development)
 if (process.env.NODE_ENV === 'development') {
     userSchema.set('autoIndex', true);
 }
