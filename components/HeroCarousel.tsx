@@ -3,6 +3,8 @@
 import "react-responsive-carousel/lib/styles/carousel.min.css"; 
 import { Carousel } from 'react-responsive-carousel';
 import Image from "next/image";
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
 
 const heroImages = [
   { imgUrl: '/assets/images/hero-1.svg', alt: 'smartwatch'},
@@ -13,8 +15,26 @@ const heroImages = [
 ]
 
 const HeroCarousel = () => {
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (carouselRef.current) {
+      gsap.fromTo(
+        carouselRef.current,
+        { opacity: 0, scale: 0.9 },
+        { 
+          opacity: 1, 
+          scale: 1, 
+          duration: 1, 
+          ease: 'power2.out',
+          delay: 0.3
+        }
+      );
+    }
+  }, []);
+
   return (
-    <div className="hero-carousel">
+    <div ref={carouselRef} className="hero-carousel">
       <Carousel
         showThumbs={false}
         autoPlay

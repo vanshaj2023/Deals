@@ -5,7 +5,6 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    // console.log("Trending API POST called");
     await connectToDB();
     const formData = await req.formData();
     const data = JSON.parse(formData.get("data") as string);
@@ -16,7 +15,6 @@ export async function POST(req: Request) {
 
     console.log("Received promoted product data:", data);
 
-    // Verify user exists or create one
     let user = await User.findOne({ email: data?.userEmail });
     if (!user) {
       console.log("✨ Creating new promoter user:", data?.userEmail);
@@ -61,7 +59,6 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Error in trending POST:", error);
 
-    // Send error details in response
     return NextResponse.json({
       success: false,
       error: (error as Error).message || "An unknown error occurred.",
@@ -72,7 +69,6 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    // console.log("Trending API GET called");
     await connectToDB();
 
     const { searchParams } = new URL(req.url);
@@ -83,26 +79,35 @@ export async function GET(req: Request) {
 
     if (!email) {
       // Get all promoted products
-      const result = await Product.find({ isPromoted: true })
+      const result = await Product.find({ 
+        productType: 'promoted',
+        isPromoted: true 
+      })
         .sort({ promotedAt: -1 })
-        .limit(limit ? parseInt(limit, 10) : 100);
+        .limit(limit ? parseInt(limit, 10) : 100)
+        .lean();
 
-      console.log("Found", result.length, "promoted products");
-      return NextResponse.json({ success: true, data: result });
+      const serializedResult = JSON.parse(JSON.stringify(result));
+
+      console.log("Found", serializedResult.length, "promoted products");
+      return NextResponse.json({ success: true, data: serializedResult });
     }
 
-    // Query the database for promoted products created by the given email
     const result = await Product.find({ 
+      productType: 'promoted',
       isPromoted: true, 
       promotedBy: email 
-    }).sort({ promotedAt: -1 });
+    })
+      .sort({ promotedAt: -1 })
+      .lean();
+  
+    const serializedResult = JSON.parse(JSON.stringify(result));
 
-    console.log("Found", result.length, "products for user:", email);
-    return NextResponse.json({ success: true, data: result });
+    console.log("Found", serializedResult.length, "products for user:", email);
+    return NextResponse.json({ success: true, data: serializedResult });
   } catch (error) {
     console.error("Error fetching trending products:", error);
 
-    // Return an error response
     return NextResponse.json({
       success: false,
       error: (error as Error).message || "An unknown error occurred.",

@@ -3,8 +3,9 @@
 import { useSession } from "next-auth/react";
 import axios from "axios";
 import { Search } from "lucide-react";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import DisplayProductList from "@/components/DisplayProductList";
+import gsap from "gsap";
 
 interface Product {
   id: string;
@@ -22,6 +23,9 @@ const ExplorePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [hasMore, setHasMore] = useState(true);
   const { data: session } = useSession();
+  const headerRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLButtonElement>(null);
 
   const userEmail = session?.user?.email || "";
 
@@ -30,7 +34,7 @@ const ExplorePage: React.FC = () => {
       try {
         setLoading(true);
         const response = await axios.post("/api/all-product", {
-          limit: 9,
+          limit: 10,
           offset: currentOffset,
           searchText: searchQuery,
         });
@@ -55,7 +59,56 @@ const ExplorePage: React.FC = () => {
   useEffect(() => {
     fetchProducts(0);
     setOffset(0);
-  }, [fetchProducts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
+
+  // GSAP animations
+  useEffect(() => {
+    if (headerRef.current) {
+      gsap.fromTo(
+        headerRef.current,
+        { opacity: 0, y: -20 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }
+      );
+    }
+    if (searchRef.current) {
+      gsap.fromTo(
+        searchRef.current,
+        { opacity: 0, scale: 0.95 },
+        { opacity: 1, scale: 1, duration: 0.6, delay: 0.2, ease: 'power2.out' }
+      );
+    }
+  }, []);
+
+  // Button hover animations
+  useEffect(() => {
+    if (loadMoreRef.current) {
+      const handleMouseEnter = () => {
+        gsap.to(loadMoreRef.current, {
+          scale: 1.05,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+      };
+
+      const handleMouseLeave = () => {
+        gsap.to(loadMoreRef.current, {
+          scale: 1,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+      };
+
+      const button = loadMoreRef.current;
+      button.addEventListener('mouseenter', handleMouseEnter);
+      button.addEventListener('mouseleave', handleMouseLeave);
+
+      return () => {
+        button.removeEventListener('mouseenter', handleMouseEnter);
+        button.removeEventListener('mouseleave', handleMouseLeave);
+      };
+    }
+  }, [hasMore, products.length]);
 
   const handleSearch = () => {
     setOffset(0);
@@ -69,54 +122,51 @@ const ExplorePage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Hero Section */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Discover Amazing Products</h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Explore our curated collection of premium products for every need
-        </p>
-      </div>
-
-      {/* Search Bar */}
-      <div className="max-w-2xl mx-auto mb-12">
-        <div className="relative flex items-center">
-          <input
-            type="text"
-            placeholder="Search for products..."
-            className="w-full px-6 py-3 border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-          />
-          <button
-            onClick={handleSearch}
-            className="absolute right-2 bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition-colors"
-            title="Search"
-            aria-label="Search"
-          >
-            <Search size={20} />
-          </button>
+    <div className="min-h-screen bg-white py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        <div ref={headerRef} className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Explore Products</h1>
+          <p className="text-sm text-gray-600 mt-1">Discover amazing deals</p>
         </div>
-      </div>
 
-      {/* Product List */}
-      <DisplayProductList productList={products} useremailId={userEmail} />
-
-      {/* Load More Button */}
-      {hasMore && products.length > 0 && (
-        <div className="text-center mt-8">
-          <button
-            onClick={handleLoadMore}
-            disabled={loading}
-            className={`px-6 py-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors ${
-              loading ? "opacity-70 cursor-not-allowed" : ""
-            }`}
-          >
-            {loading ? "Loading..." : "Load More Products"}
-          </button>
+        {/* Search Bar */}
+        <div ref={searchRef} className="mb-8">
+          <div className="relative max-w-md">
+            <input
+              type="text"
+              placeholder="Search for products..."
+              className="w-full px-4 py-2.5 border border-gray-300 focus:outline-none focus:border-gray-900 text-sm"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <button
+              onClick={handleSearch}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900"
+              aria-label="Search"
+            >
+              <Search size={20} />
+            </button>
+          </div>
         </div>
-      )}
+
+        <DisplayProductList productList={products} useremailId={userEmail} />
+
+        {hasMore && products.length > 0 && (
+          <div className="text-center mt-8">
+            <button
+              ref={loadMoreRef}
+              onClick={handleLoadMore}
+              disabled={loading}
+              className={`px-8 py-3 border border-gray-900 text-gray-900 font-medium hover:bg-gray-900 hover:text-white transition-colors ${
+                loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              {loading ? "Loading..." : "Load More"}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

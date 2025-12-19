@@ -9,21 +9,18 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    console.log("📥 Wishlist POST called");
+    console.log("Wishlist POST called");
     await connectToDB();
 
-    // Parse JSON data from request body
     const data = await req.json();
 
-    // Validate input data
     if (!data?.useremail || !data?.productId) {
-      console.error("❌ Missing required fields");
+      console.error("Missing required fields");
       throw new Error("Both useremail and productId are required.");
     }
 
     console.log("Received wishlist data:", data);
 
-    // Find or create user
     let user = await User.findOne({ email: data.useremail });
     if (!user) {
       user = await User.create({
@@ -33,13 +30,10 @@ export async function POST(req: Request) {
       });
     }
 
-    // Check if product exists
     const product = await Product.findById(data.productId);
     if (!product) {
       throw new Error("Product not found");
     }
-
-    // Check if already in wishlist
     const existing = await Wishlist.findOne({
       userId: user._id,
       productId: data.productId
@@ -53,7 +47,6 @@ export async function POST(req: Request) {
       });
     }
 
-    // Add product to wishlist
     const result = await Wishlist.create({
       userId: user._id,
       userEmail: data.useremail,
@@ -75,13 +68,11 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    // console.log("Wishlist GET called");
     await connectToDB();
 
     const { searchParams } = new URL(req.url);
     const useremailId = searchParams.get("userId");
 
-    // Validate input
     console.log("User email:", useremailId);
     if (!useremailId) {
       console.error("No user email provided");
@@ -90,32 +81,40 @@ export async function GET(req: Request) {
 
     console.log("Fetching wishlist for:", useremailId);
 
-    // Find user
     const user = await User.findOne({ email: useremailId });
     if (!user) {
       return NextResponse.json({ success: true, data: [] });
     }
 
-    // Fetch wishlist 
     const wishlistItems = await Wishlist.find({ 
       $or: [
         { userId: user._id },
         { userEmail: useremailId }
       ]
-    }).populate('productId');
+    }).populate('productId').lean();
 
-    const result = wishlistItems.map((item: any) => ({
-      id: item._id,
-      productId: item.productId._id,
-      name: item.productId.title,
-      price: item.productId.currentPrice,
-      description: item.productId.description,
-      category: item.productId.category,
-      link: item.productId.link || item.productId.url,
-      image: item.productId.image,
-    }));
+    const result = wishlistItems
+      .filter((item: any) => item.productId) 
+      .map((item: any) => {
+        const product = item.productId;
+        return {
+          _id: product._id,
+          title: product.title,
+          currentPrice: product.currentPrice,
+          originalPrice: product.originalPrice,
+          currency: product.currency || '₹',
+          category: product.category,
+          image: product.image,
+          url: product.url,
+          stars: product.stars,
+          reviewsCount: product.reviewsCount,
+          discountRate: product.discountRate,
+          isOutOfStock: product.isOutOfStock,
+          description: product.description,
+        };
+      });
 
-    console.log("Fetched Wishlist Data:", result);
+    console.log("Fetched Wishlist Data:", result.length, "items");
 
     return NextResponse.json({ success: true, data: result });
   } catch (error) {
@@ -143,7 +142,6 @@ export async function DELETE(req: Request) {
       );
     }
 
-    // Validate if productId is a valid MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(productId)) {
       return NextResponse.json(
         { success: false, error: "Invalid product ID" },
@@ -160,7 +158,6 @@ export async function DELETE(req: Request) {
       );
     }
 
-    // Delete the wishlist item
     const deletedItem = await Wishlist.findOneAndDelete({
       $or: [
         { userId: user._id, productId: productId },

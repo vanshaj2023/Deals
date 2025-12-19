@@ -3,23 +3,27 @@
 import { useSession } from "next-auth/react";
 import axios from "axios";
 import React, { useEffect, useState, useCallback } from "react";
-import { Trash2 } from "lucide-react";
-import Image from "next/image";
+import { Heart } from "lucide-react";
 import Link from "next/link";
+import ProductCard from "@/components/ProductCard";
 
-interface Product {
-  id: number;
-  productId: number;
-  name: string;
-  price: string;
-  description: string;
-  category: string;
-  link?: string;
+interface WishlistProduct {
+  _id: string;
+  title: string;
+  currentPrice: number;
+  originalPrice?: number;
+  currency: string;
+  category?: string;
   image: string;
+  url?: string;
+  stars?: number;
+  reviewsCount?: number;
+  discountRate?: number;
+  isOutOfStock?: boolean;
 }
 
 const WishlistPage = () => {
-  const [productList, setProductList] = useState<Product[]>([]);
+  const [productList, setProductList] = useState<WishlistProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { data: session } = useSession();
@@ -43,91 +47,79 @@ const WishlistPage = () => {
     if (useremail) {
       fetchWishlist();
     }
-  }, [fetchWishlist]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useremail]);
 
-  const handleRemoveFromWishlist = async (productId: number) => {
-    try {
-      await axios.delete(`/api/wishlist?useremail=${useremail}&productId=${productId}`);
-      // Optimistically update the UI
-      setProductList(prev => prev.filter(item => item.productId !== productId));
-    } catch (err) {
-      console.error("Error removing from wishlist:", err);
-      setError("Failed to remove item from wishlist. Please try again.");
-    }
-  };
-
-  if (loading) return <p className="text-center py-8">Loading wishlist...</p>;
-  if (error) return <p className="text-red-500 text-center py-8">{error}</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-gray-900">My Wishlist</h1>
+            <p className="text-sm text-gray-600 mt-1">Your saved items</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((_, index) => (
+              <div
+                key={index}
+                className="h-[400px] w-full bg-gray-100 animate-pulse"
+              ></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-red-500 text-center">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h2 className="text-2xl font-bold mb-6">Your Wishlist</h2>
-      
-      {productList.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {productList.map((product) => (
-            <div key={product.id} className="border rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
-              {/* Product Image */}
-              <div className="relative h-48 w-full">
-                {product.image ? (
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="bg-gray-200 h-full flex items-center justify-center">
-                    <span className="text-gray-500">No Image</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Product Info */}
-              <div className="p-4">
-                <h3 className="font-semibold text-lg mb-2 line-clamp-1">{product.name}</h3>
-                <p className="text-gray-600 text-sm mb-1">{product.category}</p>
-                <p className="text-green-600 font-bold mb-4">${product.price}</p>
-
-                {/* Action Buttons */}
-                <div className="flex justify-between items-center">
-                  {product.link ? (
-                    <Link
-                      href={product.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
-                    >
-                      View Product
-                    </Link>
-                  ) : (
-                    <span className="text-gray-400 text-sm">No link available</span>
-                  )}
-
-                  <button
-                    onClick={() => handleRemoveFromWishlist(product.productId)}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                    aria-label="Remove from wishlist"
-                    title="Remove from wishlist"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+    <div className="min-h-screen bg-white py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">My Wishlist</h1>
+          <p className="text-sm text-gray-600 mt-1">
+            {productList.length > 0 
+              ? `${productList.length} ${productList.length === 1 ? 'item' : 'items'} saved`
+              : 'Your saved items'
+            }
+          </p>
         </div>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-lg text-gray-600 mb-4">Your wishlist is empty</p>
-          <Link
-            href="/trending"
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            Browse Products
-          </Link>
-        </div>
-      )}
+
+        {/* Products Grid */}
+        {productList.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {productList.map((product) => (
+              <ProductCard 
+                key={product._id}
+                product={product}
+                showWishlist={true}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" strokeWidth={1.5} />
+            <p className="text-gray-500 mb-2">Your wishlist is empty</p>
+            <p className="text-sm text-gray-400 mb-6">Save items you like to buy them later</p>
+            <Link
+              href="/explore"
+              className="inline-block px-6 py-3 border border-gray-900 text-gray-900 font-medium hover:bg-gray-900 hover:text-white transition-colors"
+            >
+              Start Shopping
+            </Link>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

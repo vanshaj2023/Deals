@@ -81,11 +81,12 @@ export async function getProductById(productId: string) {
   try {
     await connectToDB();
 
-    const product = await Product.findOne({ _id: productId });
+    const product = await Product.findOne({ _id: productId }).lean();
 
     if (!product) return null;
 
-    return product;
+    // Convert to plain object and stringify ObjectId
+    return JSON.parse(JSON.stringify(product));
   } catch (error) {
     console.log(error);
   }
@@ -95,9 +96,9 @@ export async function getAllProducts() {
   try {
     await connectToDB();
 
-    const products = await Product.find();
+    const products = await Product.find().lean();
 
-    return products;
+    return JSON.parse(JSON.stringify(products));
   } catch (error) {
     console.log(error);
   }
@@ -107,15 +108,15 @@ export async function getSimilarProducts(productId: string) {
   try {
     await connectToDB();
 
-    const currentProduct = await Product.findById(productId);
+    const currentProduct = await Product.findById(productId).lean();
 
     if (!currentProduct) return null;
 
     const similarProducts = await Product.find({
       _id: { $ne: productId },
-    }).limit(10);
+    }).limit(10).lean();
 
-    return similarProducts;
+    return JSON.parse(JSON.stringify(similarProducts));
   } catch (error) {
     console.log(error);
   }

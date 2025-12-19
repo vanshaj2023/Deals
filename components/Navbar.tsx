@@ -6,8 +6,9 @@ import { useRouter } from 'next/navigation'
 import wish from '../public/assets/icons/black-heart.svg'
 import search from '../public/assets/icons/searchbar.png'
 import trend from '../public/assets/icons/trending.png'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession, signOut } from 'next-auth/react'
+import gsap from 'gsap'
 
 const Navbar = () => {
   const { data: session, status } = useSession()
@@ -15,10 +16,39 @@ const Navbar = () => {
   const [showMenu, setShowMenu] = useState(false)
   const router = useRouter()
   const isSignedIn = status === 'authenticated'
+  const navRef = useRef<HTMLElement>(null);
+  const welcomeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (navRef.current) {
+      gsap.fromTo(
+        navRef.current,
+        { y: -100, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     if (isSignedIn && session?.user) {
       setWelcomeMessage(`Welcome ${session.user.name}`)
+      
+      if (welcomeRef.current) {
+        gsap.fromTo(
+          welcomeRef.current,
+          { opacity: 0, x: -20 },
+          { opacity: 1, x: 0, duration: 0.5, ease: 'power2.out' }
+        );
+        
+        gsap.to(welcomeRef.current, {
+          opacity: 0,
+          x: 20,
+          duration: 0.5,
+          delay: 4.5,
+          ease: 'power2.in'
+        });
+      }
+      
       const timer = setTimeout(() => {
         setWelcomeMessage('')
       }, 5000)
@@ -39,7 +69,7 @@ const Navbar = () => {
   }
 
   return (
-    <header className="w-full">
+    <header ref={navRef} className="w-full">
       <nav className="nav">
         <Link href="/" className="flex items-center gap-1">
           <Image
@@ -55,7 +85,7 @@ const Navbar = () => {
 
         <div className="flex items-center gap-3">
           {welcomeMessage && (
-            <div className="font-bold duration-500">
+            <div ref={welcomeRef} className="font-bold duration-500">
               {welcomeMessage}
             </div>
           )}
