@@ -76,22 +76,19 @@ const UserListing: React.FC = () => {
           // Loading indicator
           <h2 className="font-medium text-center text-gray-500">Loading...</h2>
         ) : error ? (
-          // Error message
           <h2 className="font-medium text-center text-red-500">{error}</h2>
         ) : listing.length === 0 ? (
-          // Empty state when no products are available
           <h2 className="font-medium text-center text-gray-500">
             No products found
           </h2>
         ) : (
-          // Render product cards
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {listing.map((product) => (
               <ProductCardItem
                 key={product.id}
                 product={product}
-                useremail={user?.primaryEmailAddress?.emailAddress ?? ""} // Pass user email for wishlist functionality
-                editable={true} // Allow edit options
+                useremail={session?.user?.email ?? ""}
+                editable={true} 
               />
             ))}
           </div>
