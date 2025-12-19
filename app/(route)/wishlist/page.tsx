@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useSession } from "next-auth/react";
 import axios from "axios";
 import React, { useEffect, useState, useCallback } from "react";
 import { Trash2 } from "lucide-react";
@@ -22,8 +22,8 @@ const WishlistPage = () => {
   const [productList, setProductList] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useUser();
-  const useremail = user?.primaryEmailAddress?.emailAddress || "";
+  const { data: session } = useSession();
+  const useremail = session?.user?.email || "";
 
   const fetchWishlist = useCallback(async () => {
     try {

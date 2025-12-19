@@ -2,11 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ProductCardItem from './ProductCardItem';
-import { useUser } from '@clerk/nextjs';
+import { useSession } from 'next-auth/react';
 
 const TrendingPage = () => {
   const [productList, setProductList] = useState([]);
-  const { user } = useUser();
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -5,12 +5,13 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { gsap } from 'gsap'
 import HeroCarousel from '@/components/HeroCarousel'
-import { useUser } from '@clerk/nextjs'
+import { useSession } from 'next-auth/react'
 
 const Home = () => {
-  const { user, isSignedIn } = useUser()
+  const { data: session, status } = useSession()
   const [welcomeMessage, setWelcomeMessage] = useState('')
   const router = useRouter()
+  const isSignedIn = status === 'authenticated'
   
   const textRef = useRef(null)
   const imageRef = useRef(null)
@@ -21,17 +22,15 @@ const Home = () => {
   const imagesRef = useRef(null)
 
   useEffect(() => {
-    if (isSignedIn && user) {
-      setWelcomeMessage(`Welcome ${user.fullName}`)
+    if (isSignedIn && session?.user) {
+      setWelcomeMessage(`Welcome ${session.user.name}`)
       console.log(welcomeMessage)
       const timer = setTimeout(() => {
         setWelcomeMessage('')
-      }, 5000) // Remove the welcome message after 5 seconds
-
-      // Clear the timeout if the component unmounts
+      }, 5000)
       return () => clearTimeout(timer)
     }
-  }, [isSignedIn, user])
+  }, [isSignedIn, session])
 
   useEffect(() => {
     const tl = gsap.timeline({ defaults: { ease: 'power3.inOut' } })
@@ -81,7 +80,7 @@ const Home = () => {
 
   const handleButtonClick = () => {
     if (!isSignedIn) {
-      router.push('/sign-in')
+      router.push('/login')
     } else {
       router.push('/deals-new')
     }

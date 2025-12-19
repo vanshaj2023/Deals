@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useSession } from "next-auth/react";
 import axios from "axios";
 import { Search } from "lucide-react";
 import React, { useEffect, useState, useCallback } from "react";
@@ -21,9 +21,9 @@ const ExplorePage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [hasMore, setHasMore] = useState(true);
-  const { user } = useUser();
+  const { data: session } = useSession();
 
-  const userEmail = user?.primaryEmailAddress?.emailAddress || "";
+  const userEmail = session?.user?.email || "";
 
   const fetchProducts = useCallback(
     async (currentOffset: number) => {

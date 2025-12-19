@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema({
   },
   password: { 
     type: String, 
-    required: false // Optional for OAuth users
+    required: false
   },
   image: { 
     type: String 
@@ -37,8 +37,11 @@ const userSchema = new mongoose.Schema({
   timestamps: true 
 });
 
-// Index for faster email lookups
 userSchema.index({ email: 1 });
+
+if (process.env.NODE_ENV === 'development') {
+  userSchema.set('autoIndex', true);
+}
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 

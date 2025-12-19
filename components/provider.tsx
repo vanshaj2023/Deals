@@ -1,27 +1,22 @@
 "use client";
-import { useUser } from "@clerk/nextjs";
+import { useSession } from "next-auth/react";
 import axios from "axios";
 import { useEffect, ReactNode, useState } from "react";
 
 function Provider({ children }: { children: ReactNode }) {
-    const { user, isLoaded } = useUser();
+    const { data: session, status } = useSession();
     const [synced, setSynced] = useState(false);
 
     const CheckIsNewUser = async () => {
-        if (!isLoaded || !user || synced) return;
+        if (status !== 'authenticated' || !session?.user || synced) return;
     
-        console.log("🔄 Syncing user to MongoDB:", user.primaryEmailAddress?.emailAddress);
+        console.log("🔄 Syncing user to MongoDB:", session.user.email);
     
         try {
             const result = await axios.post("/api/user", {
-                name: user.fullName || user.username || "User",
-                email: user.primaryEmailAddress?.emailAddress,
-                image: user.imageUrl,
-                // Support legacy Clerk format too
-                fullname: user.fullName,
-                primaryEmailAddress: {
-                    emailAddress: user.primaryEmailAddress?.emailAddress,
-                },
+                name: session.user.name || "User",
+                email: session.user.email,
+                image: session.user.image,
             });
     
             console.log("User synced to MongoDB:", result.data);
@@ -37,7 +32,7 @@ function Provider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         CheckIsNewUser();
-    }, [user, isLoaded]);
+    }, [session, status]);
 
     return <>{children}</>;
 }

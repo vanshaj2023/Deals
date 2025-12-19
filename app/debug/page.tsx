@@ -1,10 +1,10 @@
 "use client"
 import { useEffect, useState } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 export default function DebugPage() {
-  const { user, isLoaded } = useUser();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
   const [dbStatus, setDbStatus] = useState<any>(null);
@@ -14,14 +14,18 @@ export default function DebugPage() {
   const [checkingAccess, setCheckingAccess] = useState(true);
 
   const checkAdminAccess = async () => {
-    if (!isLoaded || !user) {
-      setCheckingAccess(false);
+    if (status === 'loading') {
+      return;
+    }
+
+    if (!session?.user) {
+      router.push('/login');
       return;
     }
 
     try {
       // Check if user exists in database and is admin
-      const response = await fetch(`/api/user?email=${user.primaryEmailAddress?.emailAddress}`);
+      const response = await fetch(`/api/user?email=${session.user.email}`);
       const data = await response.json();
       
       if (data && data.role === 'admin') {

@@ -42,5 +42,9 @@ const userSchema = new mongoose_1.default.Schema({
 });
 // Index for faster email lookups
 userSchema.index({ email: 1 });
+// Ensure indexes are properly synced (optional, for development)
+if (process.env.NODE_ENV === 'development') {
+    userSchema.set('autoIndex', true);
+}
 const User = mongoose_1.default.models.User || mongoose_1.default.model('User', userSchema);
 exports.default = User;

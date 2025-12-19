@@ -1,9 +1,9 @@
 import Navbar from '@/components/Navbar'
 import Provider from '@/components/provider'
+import AuthProvider from '@/components/AuthProvider'
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter, Space_Grotesk } from 'next/font/google'
-import { ClerkProvider } from '@clerk/nextjs'
 import { Toaster } from 'sonner'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -23,9 +23,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <body className={inter.className}>
+    <html lang="en">
+      <body className={inter.className}>
+        <AuthProvider>
           <Provider>
             <main className="max-w-10xl mx-auto">
               <Navbar />
@@ -33,8 +33,8 @@ export default function RootLayout({
             </main>
             <Toaster position="top-right" />
           </Provider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </AuthProvider>
+      </body>
+    </html>
   )
 }

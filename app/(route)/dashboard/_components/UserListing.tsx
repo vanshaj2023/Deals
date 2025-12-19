@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 // import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
+import { useSession } from "next-auth/react";
 import axios from "axios";
 import ProductCardItem from "@/components/ProductCardItem";
 
@@ -22,14 +22,14 @@ const UserListing: React.FC = () => {
   const [listing, setListing] = useState<Product[]>([]); // Array to store product data
   const [loading, setLoading] = useState<boolean>(false); // Loading state
   const [error, setError] = useState<string | null>(null); // Error message state
-  const { isLoaded, user } = useUser(); // Clerk's `useUser` hook for authentication
+  const { data: session, status } = useSession(); // NextAuth session hook
 
-  // Fetch products when `user` data becomes available
+  // Fetch products when `session` data becomes available
   useEffect(() => {
-    if (isLoaded && user) {
+    if (status === 'authenticated' && session) {
       GetTrendingProductList();
     }
-  }, [isLoaded, user]); // Dependencies: `isLoaded`, `user`
+  }, [status, session]); // Dependencies: `status`, `session`
 
   // Fetch trending product list
   const GetTrendingProductList = async () => {

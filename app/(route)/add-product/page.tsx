@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useUser } from "@clerk/nextjs";
+import { useSession } from "next-auth/react";
 import { Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -19,12 +19,12 @@ const Page = () => {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
-    const { user } = useUser();
+    const { data: session } = useSession();
     useEffect(() => {
         setFormData({
-            userEmail: user?.primaryEmailAddress?.emailAddress || ""
+            userEmail: session?.user?.email || ""
         })
-    }, [user]);
+    }, [session]);
 
     const handleInputChange = (name: string, value: string | File) => {
         setFormData(prev => ({
