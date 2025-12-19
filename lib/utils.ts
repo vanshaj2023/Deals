@@ -107,7 +107,7 @@ export function getAveragePrice(priceList: PriceHistoryItem[]): number {
 }
 
 export const getEmailNotifType = (
-  scrapedProduct: Product,
+  scrapedProduct: Omit<Product, '_id'>,
   currentProduct: Product
 ): keyof typeof Notification | null => {
   const lowestPrice = getLowestPrice(currentProduct.priceHistory);
