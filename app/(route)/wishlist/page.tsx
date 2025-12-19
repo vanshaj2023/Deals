@@ -6,24 +6,10 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Heart } from "lucide-react";
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
-
-interface WishlistProduct {
-  _id: string;
-  title: string;
-  currentPrice: number;
-  originalPrice?: number;
-  currency: string;
-  category?: string;
-  image: string;
-  url?: string;
-  stars?: number;
-  reviewsCount?: number;
-  discountRate?: number;
-  isOutOfStock?: boolean;
-}
+import { Product } from "@/types";
 
 const WishlistPage = () => {
-  const [productList, setProductList] = useState<WishlistProduct[]>([]);
+  const [productList, setProductList] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { data: session } = useSession();
