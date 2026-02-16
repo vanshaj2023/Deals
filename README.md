@@ -2,7 +2,7 @@
 
 > Automated price tracking system with Telegram bot integration, email alerts, and trending products showcase.
 
-## 🚀 Features
+## 🚀 Features..
 
 ### Core Features
 - 🤖 **Telegram Bot Integration** - Automatically scrapes product URLs shared in Telegram groups...
