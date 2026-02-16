@@ -5,7 +5,7 @@
 ## 🚀 Features
 
 ### Core Features
-- 🤖 **Telegram Bot Integration** - Automatically scrapes product URLs shared in Telegram groups
+- 🤖 **Telegram Bot Integration** - Automatically scrapes product URLs shared in Telegram groups...
 - 📊 **Price Tracking** - Monitors price changes for Amazon products
 - 📧 **Email Alerts** - Notifies users when prices drop
 - ⭐ **Trending Section** - Promotes featured products from verified users
