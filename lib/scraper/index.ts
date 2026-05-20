@@ -134,7 +134,7 @@ export async function scrapeAmazonProduct(url: string) {
         lowestPrice: Number(aiData.currentPrice) || 0,
         highestPrice: Number(aiData.originalPrice) || Number(aiData.currentPrice) || 0,
         averagePrice: Number(aiData.currentPrice) || 0,
-        productType: 'scraped' as const,
+        source: 'amazon' as const,
       };
     }
 

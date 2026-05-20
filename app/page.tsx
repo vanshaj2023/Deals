@@ -64,7 +64,7 @@ const Home = () => {
     if (!isSignedIn) {
       router.push('/login')
     } else {
-      router.push('/deals-new')
+      router.push('/dashboard')
     }
   }
 

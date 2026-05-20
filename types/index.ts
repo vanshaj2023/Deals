@@ -1,13 +1,7 @@
 export type PriceHistoryItem = {
   price: number;
-  date: Date; 
+  date: Date;
 };
-
-export type User = {
-  email: string;
-};
-
-export type ProductType = 'scraped' | 'promoted';
 
 export type Product = {
   _id: string;
@@ -23,18 +17,13 @@ export type Product = {
   averagePrice: number;
   discountRate: number;
   description: string;
+  summary?: string;
   category: string;
   reviewsCount: number;
   stars: number;
   isOutOfStock: boolean;
+  source: 'amazon' | 'myntra' | 'flipkart';
   createdAt: Date;
-  users?: User[];
-  productType: ProductType; // 'scraped' = from Amazon/bot, 'promoted' = manually added trending
-  isPromoted?: boolean;
-  promotedBy?: string;
-  promotedAt?: Date;
-  about?: string;
-  link?: string;
 };
 
 export type NotificationType =

@@ -5,6 +5,25 @@ import bcrypt from 'bcryptjs';
 import { connectToDB } from './mongoose';
 import User from './models/user.model';
 
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      role: string;
+    };
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id?: string;
+    role?: string;
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -54,21 +73,20 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       if (account?.provider === 'google') {
         await connectToDB();
-        
+
         let existingUser = await User.findOne({ email: user.email });
-        
+
         if (!existingUser) {
-          existingUser = await User.create({
+          await User.create({
             name: user.name,
             email: user.email,
             image: user.image,
             role: 'user',
             emailVerified: new Date(),
           });
-          console.log('New Google user created:', existingUser.email);
         } else {
           if (!existingUser.image && user.image) {
             existingUser.image = user.image;
@@ -77,14 +95,13 @@ export const authOptions: NextAuthOptions = {
             existingUser.emailVerified = new Date();
           }
           await existingUser.save();
-          console.log('Linked Google account to existing user:', existingUser.email);
         }
-        
+
         return true;
       }
       return true;
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       if (user) {
         await connectToDB();
         const dbUser = await User.findOne({ email: user.email });
@@ -97,8 +114,8 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
+        session.user.id = token.id ?? '';
+        session.user.role = token.role ?? 'user';
       }
       return session;
     },
@@ -110,7 +127,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

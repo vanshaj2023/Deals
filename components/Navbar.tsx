@@ -3,9 +3,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import wish from '../public/assets/icons/black-heart.svg'
-import search from '../public/assets/icons/searchbar.png'
-import trend from '../public/assets/icons/trending.png'
 import { useState, useEffect, useRef } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import gsap from 'gsap'
@@ -16,8 +13,8 @@ const Navbar = () => {
   const [showMenu, setShowMenu] = useState(false)
   const router = useRouter()
   const isSignedIn = status === 'authenticated'
-  const navRef = useRef<HTMLElement>(null);
-  const welcomeRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null)
+  const welcomeRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (navRef.current) {
@@ -25,43 +22,37 @@ const Navbar = () => {
         navRef.current,
         { y: -100, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' }
-      );
+      )
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
     if (isSignedIn && session?.user) {
       setWelcomeMessage(`Welcome ${session.user.name}`)
-      
+
       if (welcomeRef.current) {
         gsap.fromTo(
           welcomeRef.current,
           { opacity: 0, x: -20 },
           { opacity: 1, x: 0, duration: 0.5, ease: 'power2.out' }
-        );
-        
+        )
+
         gsap.to(welcomeRef.current, {
           opacity: 0,
           x: 20,
           duration: 0.5,
           delay: 4.5,
           ease: 'power2.in'
-        });
+        })
       }
-      
-      const timer = setTimeout(() => {
-        setWelcomeMessage('')
-      }, 5000)
+
+      const timer = setTimeout(() => setWelcomeMessage(''), 5000)
       return () => clearTimeout(timer)
     }
   }, [isSignedIn, session])
 
   const handleButtonClick = () => {
-    if (!isSignedIn) {
-      router.push('/login')
-    } else {
-      router.push('/deals-new')
-    }
+    router.push(isSignedIn ? '/dashboard' : '/login')
   }
 
   const handleSignOut = async () => {
@@ -89,22 +80,14 @@ const Navbar = () => {
               {welcomeMessage}
             </div>
           )}
-          <Link href={'/explore'} className='h-5 w-6'>
-            <Image src={search} alt='search'/>
-          </Link>
-          <Link href={'/wishlist'}>
-            <Image src={wish} alt='wish' />
-          </Link>
-          <Link href={'/trending'}>
-            <Image src={trend} alt='trend'/>
-          </Link>
+
           <button
             className="bg-black hover:bg-black-100 text-white font-bold py-2 px-4 rounded-full"
             onClick={handleButtonClick}
           >
-            {isSignedIn ? 'Deals' : 'Login'}
+            {isSignedIn ? 'Dashboard' : 'Login'}
           </button>
-          
+
           {isSignedIn && (
             <div className="relative">
               <button
@@ -115,7 +98,7 @@ const Navbar = () => {
                   {session?.user?.name?.charAt(0).toUpperCase()}
                 </div>
               </button>
-              
+
               {showMenu && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
                   <div className="px-4 py-2 border-b">
@@ -138,4 +121,4 @@ const Navbar = () => {
   )
 }
 
-export default Navbar;
+export default Navbar
