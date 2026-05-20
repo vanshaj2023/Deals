@@ -1,183 +1,94 @@
-"use client"
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { useSession } from "next-auth/react";
-import { Loader2Icon } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+'use client';
 
-const Page = () => {
-    const categoryOptions = [
-        "Electronics",
-        "Clothing",
-        "Furniture",
-        "Home Appliances",
-        "Books",
-        "Others",
-    ];
-    const [formData, setFormData] = useState<{ [key: string]: string | File }>({});
-    const [loading, setLoading] = useState(false);
-    const router = useRouter();
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import axios from 'axios';
+import { toast } from 'sonner';
 
-    const { data: session } = useSession();
-    useEffect(() => {
-        setFormData({
-            userEmail: session?.user?.email || ""
-        })
-    }, [session]);
+const AddProductPage = () => {
+  const router = useRouter();
+  const { status } = useSession();
+  const [url, setUrl] = useState('');
+  const [targetPrice, setTargetPrice] = useState('');
+  const [loading, setLoading] = useState(false);
 
-    const handleInputChange = (name: string, value: string | File) => {
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-        console.log(formData);
+  if (status === 'unauthenticated') {
+    router.push('/login');
+    return null;
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!url.trim()) return;
+
+    setLoading(true);
+    try {
+      await axios.post('/api/products', {
+        url: url.trim(),
+        ...(targetPrice ? { targetPrice: Number(targetPrice) } : {}),
+      });
+      toast.success('Product added! You\'ll get an email when it hits your target price.');
+      router.push('/dashboard');
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error ?? 'Failed to add product'
+        : 'Failed to add product';
+      toast.error(message);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const onAddProductBtnClick = async () => {
-        console.log(formData);
-        setLoading(true);
-        const formDataObj = new FormData();
-        formDataObj.append('image', formData.image);
-        formDataObj.append('data', JSON.stringify(formData));
+  return (
+    <div className="max-w-lg mx-auto mt-16 px-4">
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">Track a product</h1>
+      <p className="text-gray-500 text-sm mb-8">
+        Paste an Amazon product URL. We'll scrape the current price and alert you when it drops.
+      </p>
 
-        const result = await axios.post('/api/trending', formDataObj, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        })
-        setLoading(false);
-
-        if(result){
-            toast.success("Product added successfully");
-            router.push('/dashboard');
-        }
-    }
-
-    return (
-        <div className="mt-5 p-6 bg-gray-100 rounded-lg shadow-lg max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold text-gray-800">Add New Product</h2>
-            <p className="text-gray-600">
-                Start adding product details for trending products
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
-                <div className="space-y-5 mt-5">
-                    {/* Image Upload Component - Replace with your custom implementation */}
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                        <label htmlFor="product-image" className="block mb-2">Image Upload Area</label>
-                        <input 
-                            id="product-image"
-                            type="file" 
-                            onChange={(e) => e.target.files && handleInputChange('image', e.target.files[0])}
-                            className="mt-2"
-                            aria-label="Upload product image"
-                            accept="image/*"
-                        />
-                    </div>
-
-                    <div>
-                        <h4 className="font-medium text-gray-700 mb-1">Image Link</h4>
-                        <input
-                            type="text"
-                            name="imglink"
-                            placeholder="Image link"
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            onChange={(e) => handleInputChange(e.target.name, e.target.value)}
-                        />
-                    </div>
-                </div>
-
-                <div className="space-y-5">
-                    {/* Product Title */}
-                    <div>
-                        <h4 className="font-medium text-gray-700 mb-1">Product Title</h4>
-                        <input
-                            name="title"
-                            placeholder="Ex. iPhone Pro Max"
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            onChange={(e) => handleInputChange(e.target.name, e.target.value)}
-                        />
-                    </div>
-
-                    <div>
-                        <h4 className="font-medium text-gray-700 mb-1">Product Link</h4>
-                        <input
-                            type="text"
-                            name="link"
-                            placeholder="Product link"
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            onChange={(e) => handleInputChange(e.target.name, e.target.value)}
-                        />
-                    </div>
-
-                    {/* Price */}
-                    <div>
-                        <h4 className="font-medium text-gray-700 mb-1">Price</h4>
-                        <input
-                            type="number"
-                            name="price"
-                            placeholder="$999"
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            onChange={(e) => handleInputChange(e.target.name, e.target.value)}
-                        />
-                    </div>
-
-                    {/* Category */}
-                    <div>
-                        <h4 className="font-medium text-gray-700 mb-1">Category</h4>
-                        <select 
-                            onChange={(e) => handleInputChange('category', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            aria-label="Product category"
-                        >
-                            <option value="">Select a category</option>
-                            {categoryOptions.map((item, index) => (
-                                <option key={index} value={item}>
-                                    {item}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Description */}
-                    <div>
-                        <h4 className="font-medium text-gray-700 mb-1">Description</h4>
-                        <textarea
-                            name="description"
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            placeholder="Product description"
-                            rows={4}
-                            onChange={(e) => handleInputChange(e.target.name, e.target.value)}
-                        />
-                    </div>
-                    
-                    <div>
-                        <h4 className="font-medium text-gray-700 mb-1">About Product (Optional)</h4>
-                        <textarea
-                            name="about"
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            placeholder="About your product"
-                            rows={4}
-                            onChange={(e) => handleInputChange(e.target.name, e.target.value)}
-                        />
-                    </div>
-                    
-                    <button 
-                        className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:bg-blue-400"
-                        onClick={onAddProductBtnClick} 
-                        disabled={loading}
-                    >
-                        {loading ? (
-                            <span className="flex items-center justify-center">
-                                <Loader2Icon className="animate-spin mr-2" />
-                                Processing...
-                            </span>
-                        ) : "Add Product"}
-                    </button>
-                </div>
-            </div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <div>
+          <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-1">
+            Product URL
+          </label>
+          <input
+            id="url"
+            type="url"
+            required
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://www.amazon.in/..."
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none text-sm"
+          />
         </div>
-    );
+
+        <div>
+          <label htmlFor="targetPrice" className="block text-sm font-medium text-gray-700 mb-1">
+            Target price <span className="text-gray-400 font-normal">(optional — defaults to 10% below current)</span>
+          </label>
+          <input
+            id="targetPrice"
+            type="number"
+            min={0}
+            step="0.01"
+            value={targetPrice}
+            onChange={(e) => setTargetPrice(e.target.value)}
+            placeholder="e.g. 1999"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none text-sm"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-black text-white font-semibold py-3 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? 'Scraping product...' : 'Start tracking'}
+        </button>
+      </form>
+    </div>
+  );
 };
 
-export default Page;
+export default AddProductPage;

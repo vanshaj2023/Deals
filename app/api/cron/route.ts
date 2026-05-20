@@ -1,12 +1,13 @@
-import { NextResponse } from "next/server";
-import { getLowestPrice, getHighestPrice, getAveragePrice } from "@/lib/utils";
-import { connectToDB } from "@/lib/mongoose";
-import Product from "@/lib/models/product.model";
-import { scrapeAmazonProduct } from "@/lib/scraper";
-import { PriceHistoryItem } from "@/types";
+import { NextResponse } from 'next/server';
+import { getLowestPrice, getHighestPrice, getAveragePrice } from '@/lib/utils';
+import { connectToDB } from '@/lib/mongoose';
+import Product from '@/lib/models/product.model';
+import { scrapeAmazonProduct } from '@/lib/scraper';
+import { dispatchAlertsForProduct } from '@/lib/alerts/dispatch';
+import { PriceHistoryItem } from '@/types';
 
 export const maxDuration = 59;
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
@@ -15,36 +16,44 @@ export async function GET() {
 
     const products = await Product.find({});
 
-    if (!products || products.length === 0) throw new Error("No products found");
+    if (!products.length) throw new Error('No products found');
 
-    const updatedProducts = await Promise.all(
+    const results = await Promise.all(
       products.map(async (currentProduct) => {
         const scrapedProduct = await scrapeAmazonProduct(currentProduct.url);
-
         if (!scrapedProduct) return null;
+
+        const previousPrice: number = currentProduct.currentPrice;
 
         const updatedPriceHistory: PriceHistoryItem[] = [
           ...currentProduct.priceHistory,
           { price: scrapedProduct.currentPrice, date: new Date() },
         ];
 
-        const product = {
-          ...scrapedProduct,
-          priceHistory: updatedPriceHistory,
-          lowestPrice: getLowestPrice(updatedPriceHistory),
-          highestPrice: getHighestPrice(updatedPriceHistory),
-          averagePrice: getAveragePrice(updatedPriceHistory),
-        };
-
-        return Product.findOneAndUpdate(
-          { url: product.url },
-          product,
+        const updated = await Product.findOneAndUpdate(
+          { url: scrapedProduct.url },
+          {
+            ...scrapedProduct,
+            priceHistory: updatedPriceHistory,
+            lowestPrice: getLowestPrice(updatedPriceHistory),
+            highestPrice: getHighestPrice(updatedPriceHistory),
+            averagePrice: getAveragePrice(updatedPriceHistory),
+          },
           { new: true, upsert: true }
         );
+
+        if (updated) {
+          await dispatchAlertsForProduct(
+            JSON.parse(JSON.stringify(updated)),
+            previousPrice
+          );
+        }
+
+        return updated;
       })
     );
 
-    return NextResponse.json({ message: "Ok", data: updatedProducts });
+    return NextResponse.json({ message: 'Ok', data: results });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ message: `Failed: ${message}`, error: true });
