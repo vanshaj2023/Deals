@@ -5,7 +5,7 @@ import { connectToDB } from '@/lib/mongoose';
 import Product from '@/lib/models/product.model';
 import TrackedProduct from '@/lib/models/tracked-product.model';
 import User from '@/lib/models/user.model';
-import { scrapeAmazonProduct } from '@/lib/scraper';
+import { scrapeProduct } from '@/lib/scraper-client';
 import { getLowestPrice, getHighestPrice, getAveragePrice } from '@/lib/utils';
 import { PriceHistoryItem } from '@/types';
 import { sendEmailAlert } from '@/lib/alerts/email';
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
   try {
     await connectToDB();
 
-    const scrapedProduct = await scrapeAmazonProduct(url);
+    const scrapedProduct = await scrapeProduct(url, { wantSummary: true });
     if (!scrapedProduct) {
       return NextResponse.json({ error: 'Failed to scrape product' }, { status: 502 });
     }

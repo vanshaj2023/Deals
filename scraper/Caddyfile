@@ -1,0 +1,6 @@
+# Replace with your domain or EC2 public DNS.
+# Caddy auto-provisions a Let's Encrypt TLS cert.
+# Example: scraper.yourname.duckdns.org
+{$SCRAPER_DOMAIN} {
+    reverse_proxy scraper:8000
+}

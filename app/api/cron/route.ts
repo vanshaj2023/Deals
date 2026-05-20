@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getLowestPrice, getHighestPrice, getAveragePrice } from '@/lib/utils';
 import { connectToDB } from '@/lib/mongoose';
 import Product from '@/lib/models/product.model';
-import { scrapeAmazonProduct } from '@/lib/scraper';
+import { scrapeProduct } from '@/lib/scraper-client';
 import { dispatchAlertsForProduct } from '@/lib/alerts/dispatch';
 import { PriceHistoryItem } from '@/types';
 
@@ -20,7 +20,7 @@ export async function GET() {
 
     const results = await Promise.all(
       products.map(async (currentProduct) => {
-        const scrapedProduct = await scrapeAmazonProduct(currentProduct.url);
+        const scrapedProduct = await scrapeProduct(currentProduct.url);
         if (!scrapedProduct) return null;
 
         const previousPrice: number = currentProduct.currentPrice;
