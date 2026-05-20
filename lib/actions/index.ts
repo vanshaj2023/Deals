@@ -5,7 +5,7 @@ import Product from "../models/product.model";
 import { connectToDB } from "../mongoose";
 import { scrapeAmazonProduct } from "../scraper";
 import { getAveragePrice, getHighestPrice, getLowestPrice } from "../utils";
-import { User, Product as ProductType } from "@/types";
+import { User, Product as ProductType, PriceHistoryItem } from "@/types";
 import { generateEmailBody, sendEmail } from "../nodemailer";
 
 export async function scrapeAndStoreProduct(productUrl: string) {
@@ -16,29 +16,23 @@ export async function scrapeAndStoreProduct(productUrl: string) {
 
     const scrapedProduct = await scrapeAmazonProduct(productUrl);
 
-    if (!scrapedProduct) {
-      console.log('⚠️ Scraper returned no data');
-      return;
-    }
-    
-    console.log('📦 Scraped product received, processing...');
+    if (!scrapedProduct) return;
 
     let product = {
-      ...scrapedProduct, createdAt: new Date(), // Set createdAt field here 
+      ...scrapedProduct,
+      createdAt: new Date(),
       priceHistory: [{
         price: scrapedProduct.currentPrice,
         date: new Date()
-      }], // Initialize priceHistory 
+      }],
     };
 
     const existingProduct = await Product.findOne({ url: scrapedProduct.url });
 
     if (existingProduct) {
-      const updatedPriceHistory: any = [
+      const updatedPriceHistory: PriceHistoryItem[] = [
         ...existingProduct.priceHistory,
-        { price: scrapedProduct.currentPrice,
-          originalPrice: scrapedProduct.originalPrice
-         }
+        { price: scrapedProduct.currentPrice, originalPrice: scrapedProduct.originalPrice }
       ];
 
       product = {
@@ -57,23 +51,14 @@ export async function scrapeAndStoreProduct(productUrl: string) {
       { upsert: true, new: true }
     );
 
-    console.log('💾 Product saved to MongoDB:', newProduct._id);
-    console.log('📊 Product details:', {
-      title: newProduct.title,
-      price: newProduct.currentPrice,
-      productType: newProduct.productType
-    });
-
-    // Only revalidate if running in Next.js context (not from bot script)
     try {
       await revalidatePath(`/products/${newProduct._id}`);
-    } catch (revalidateError) {
-      // Ignore revalidation errors when running outside Next.js (e.g., from bot)
-      console.log('⚠️ Skipping revalidatePath (not in Next.js context)');
+    } catch {
+      // not in Next.js context (e.g. bot script)
     }
-  } catch (error: any) {
-    console.error('❌ Error in scrapeAndStoreProduct:', error.message);
-    throw new Error(`Failed to create/update product: ${error.message}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to create/update product: ${message}`);
   }
 }
 
@@ -85,10 +70,9 @@ export async function getProductById(productId: string): Promise<ProductType | n
 
     if (!product) return null;
 
-    // Convert to plain object and stringify ObjectId
     return JSON.parse(JSON.stringify(product));
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
 
@@ -100,7 +84,7 @@ export async function getAllProducts(): Promise<ProductType[] | undefined> {
 
     return JSON.parse(JSON.stringify(products));
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
 
@@ -118,7 +102,7 @@ export async function getSimilarProducts(productId: string): Promise<ProductType
 
     return JSON.parse(JSON.stringify(similarProducts));
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
 
@@ -140,6 +124,6 @@ export async function addUserEmailToProduct(productId: string, userEmail: string
       await sendEmail(emailContent, [userEmail]);
     }
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }

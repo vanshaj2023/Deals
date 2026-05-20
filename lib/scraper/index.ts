@@ -4,20 +4,27 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { extractCurrency, extractDescription, extractPrice } from '../utils';
 
-async function extractWithAI(html: string, url: string) {
+type AiExtractedData = {
+  title: string;
+  currentPrice: number;
+  originalPrice: number;
+  currency: string;
+  stars: number;
+  reviewsCount: number;
+  category: string;
+  description: string;
+  isOutOfStock: boolean;
+  discountRate: number;
+};
+
+async function extractWithAI(html: string): Promise<AiExtractedData | null> {
   const openaiApiKey = process.env.OPENAI_API_KEY;
-  
-  console.log('OpenAI API Key check:', openaiApiKey ? `Present (${openaiApiKey.substring(0, 10)}...)` : 'NOT FOUND');
-  
+
   if (!openaiApiKey || openaiApiKey.trim() === '') {
-    console.log('OpenAI API key not found or empty, using traditional scraping');
     return null;
   }
 
   try {
-    console.log('Sending complete HTML to OpenAI for intelligent extraction...');
-    console.log('HTML length:', html.length, 'characters');
-    
     const trimmedHtml = html.substring(0, 100000);
 
     const response = await axios.post(
@@ -27,7 +34,7 @@ async function extractWithAI(html: string, url: string) {
         messages: [
           {
             role: 'system',
-            content: `You are an expert at extracting product information from Amazon product pages HTML. 
+            content: `You are an expert at extracting product information from Amazon product pages HTML.
 Analyze the complete HTML and extract the following information. Return ONLY a valid JSON object with these exact fields:
 {
   "title": "product title",
@@ -71,16 +78,8 @@ Return ONLY the JSON object, no markdown formatting, no other text.`
 
     const content = response.data.choices[0].message.content.trim();
     const jsonContent = content.replace(/```json\n?|\n?```/g, '').trim();
-    const extractedData = JSON.parse(jsonContent);
-    
-    console.log('AI extraction successful');
-    console.log('AI Description:', extractedData.description?.substring(0, 200) + '...');
-    return extractedData;
-  } catch (error: any) {
-    console.error('AI extraction failed:', error.message);
-    if (error.response?.data) {
-      console.error('API Error:', error.response.data);
-    }
+    return JSON.parse(jsonContent) as AiExtractedData;
+  } catch {
     return null;
   }
 }
@@ -88,15 +87,10 @@ Return ONLY the JSON object, no markdown formatting, no other text.`
 export async function scrapeAmazonProduct(url: string) {
   if(!url) return;
 
-  console.log('Starting scrape for:', url);
-
-  // BrightData proxy configuration
   const username = String(process.env.BRIGHT_DATA_USERNAME);
   const password = String(process.env.BRIGHT_DATA_PASSWORD);
   const port = 22225;
   const session_id = (1000000 * Math.random()) | 0;
-
-  console.log('BrightData credentials configured:', username ? 'Yes' : 'No');
 
   const options = {
     auth: {
@@ -109,21 +103,20 @@ export async function scrapeAmazonProduct(url: string) {
   }
 
   try {
-    console.log('📡 Fetching page via BrightData proxy...');
     const response = await axios.get(url, options);
     const html = response.data;
     const $ = cheerio.load(html);
 
-    const aiData = await extractWithAI(html, url);
-    
+    const aiData = await extractWithAI(html);
+
     if (aiData) {
-      const images = 
-        $('#imgBlkFront').attr('data-a-dynamic-image') || 
+      const images =
+        $('#imgBlkFront').attr('data-a-dynamic-image') ||
         $('#landingImage').attr('data-a-dynamic-image') ||
         '{}';
       const imageUrls = Object.keys(JSON.parse(images));
 
-      const data = {
+      return {
         url,
         currency: aiData.currency || '$',
         image: imageUrls[0],
@@ -143,19 +136,8 @@ export async function scrapeAmazonProduct(url: string) {
         averagePrice: Number(aiData.currentPrice) || 0,
         productType: 'scraped' as const,
       };
-
-      console.log('Product scraped via AI:', data.title);
-      console.log('Price:', data.currentPrice, data.currency);
-      console.log('Rating:', data.stars, '| Reviews:', data.reviewsCount);
-      console.log('Category:', data.category);
-      console.log('Description saved:', data.description?.substring(0, 300) + '...');
-      return data;
     }
 
-    // Fallback to traditional scraping
-    console.log('Using traditional scraping method...');
-
-    // Extract the product title
     const title = $('#productTitle').text().trim();
     const currentPrice = extractPrice(
       $('.priceToPay span.a-price-whole'),
@@ -173,8 +155,8 @@ export async function scrapeAmazonProduct(url: string) {
 
     const outOfStock = $('#availability span').text().trim().toLowerCase() === 'currently unavailable';
 
-    const images = 
-      $('#imgBlkFront').attr('data-a-dynamic-image') || 
+    const images =
+      $('#imgBlkFront').attr('data-a-dynamic-image') ||
       $('#landingImage').attr('data-a-dynamic-image') ||
       '{}'
 
@@ -185,10 +167,10 @@ export async function scrapeAmazonProduct(url: string) {
 
     const description = extractDescription($)
 
-    const reviewsCount = $('#acrCustomerReviewText').text().replace(/[^\d]/g, '') || 
+    const reviewsCount = $('#acrCustomerReviewText').text().replace(/[^\d]/g, '') ||
                         $('[data-hook="total-review-count"]').text().replace(/[^\d]/g, '') ||
                         '0';
-    
+
     const stars = $('span.a-icon-alt').first().text().replace(/[^\d.]/g, '') ||
                   $('#acrPopover').attr('title')?.replace(/[^\d.]/g, '') ||
                   '0';
@@ -197,7 +179,7 @@ export async function scrapeAmazonProduct(url: string) {
                      $('.a-color-tertiary.a-size-base').first().text().trim() ||
                      'General';
 
-    const data = {
+    return {
       url,
       currency: currency || '$',
       image: imageUrls[0],
@@ -215,17 +197,10 @@ export async function scrapeAmazonProduct(url: string) {
       lowestPrice: Number(currentPrice) || Number(originalPrice),
       highestPrice: Number(originalPrice) || Number(currentPrice),
       averagePrice: Number(currentPrice) || Number(originalPrice),
-      productType: 'scraped' as const, // Mark as scraped product type
+      productType: 'scraped' as const,
     }
-
-    console.log('Scraped product:', title);
-    console.log('Price:', data.currentPrice, data.currency);
-    console.log('Rating:', data.stars, '| Reviews:', data.reviewsCount);
-    console.log('Category:', data.category);
-    console.log('Description length:', data.description.length, 'chars');
-    return data;
-  } catch (error: any) {
-    console.error('Scraper error:', error.message);
-    console.error('Stack:', error.stack);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Scraper failed: ${message}`);
   }
 }

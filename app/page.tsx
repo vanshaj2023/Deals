@@ -1,36 +1,24 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { gsap } from 'gsap'
 import HeroCarousel from '@/components/HeroCarousel'
 import { useSession } from 'next-auth/react'
 
 const Home = () => {
-  const { data: session, status } = useSession()
-  const [welcomeMessage, setWelcomeMessage] = useState('')
+  const { status } = useSession()
   const router = useRouter()
   const isSignedIn = status === 'authenticated'
-  
+
   const textRef = useRef(null)
   const imageRef = useRef(null)
   const subTextRef = useRef(null)
   const heroRef = useRef(null)
   const featuresRef = useRef(null)
   const ctaRef = useRef(null)
-  const imagesRef = useRef(null)
-
-  useEffect(() => {
-    if (isSignedIn && session?.user) {
-      setWelcomeMessage(`Welcome ${session.user.name}`)
-      console.log(welcomeMessage)
-      const timer = setTimeout(() => {
-        setWelcomeMessage('')
-      }, 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [isSignedIn, session])
 
   useEffect(() => {
     const tl = gsap.timeline({ defaults: { ease: 'power3.inOut' } })
@@ -70,12 +58,6 @@ const Home = () => {
         { opacity: 1, y: 0, duration: 1 },
         '-=0.5'
       )
-      .fromTo(
-        imagesRef.current,
-        { opacity: 0, scale: 0.95 },
-        { opacity: 1, scale: 1, duration: 1 },
-        '-=0.5'
-      )
   }, [])
 
   const handleButtonClick = () => {
@@ -110,8 +92,6 @@ const Home = () => {
             <p className="mt-6" ref={subTextRef}>
               Powerful, self-serve product and growth analytics to help you convert, engage, and retain more.
             </p>
-
-            {/* <Searchbar /> */}
           </div>
 
           <div ref={heroRef}>
@@ -133,7 +113,7 @@ const Home = () => {
       <section className="cta-section px-6 md:px-20 py-12" ref={ctaRef}>
         <div className="flex flex-col items-center">
           <h2 className="section-text text-center">Get Started with PriceIQ Today!</h2>
-          <button 
+          <button
             className="bg-primary hover:bg-primary-100 text-white font-bold py-2 px-4 rounded-full mt-6"
             onClick={handleButtonClick}
           >
@@ -144,29 +124,6 @@ const Home = () => {
           </button>
         </div>
       </section>
-
-      {/* <section className="images-section px-6 md:px-20 py-12" ref={imagesRef}>
-        <div className="flex justify-center gap-8">
-          <Image 
-            src="/assets/images/feature-1.jpg"
-            alt="Feature 1"
-            width={200}
-            height={200}
-          />
-          <Image 
-            src="/assets/images/feature-2.jpg"
-            alt="Feature 2"
-            width={200}
-            height={200}
-          />
-          <Image 
-            src="/assets/images/feature-3.jpg"
-            alt="Feature 3"
-            width={200}
-            height={200}
-          />
-        </div>
-      </section> */}
     </>
   )
 }

@@ -1,3 +1,5 @@
+import type { CheerioAPI, Cheerio } from 'cheerio';
+import type { Element } from 'domhandler';
 import { PriceHistoryItem, Product } from "@/types";
 
 const Notification = {
@@ -9,18 +11,18 @@ const Notification = {
 
 const THRESHOLD_PERCENTAGE = 40;
 
-export function extractPrice(...elements: any) {
+export function extractPrice(...elements: Cheerio<Element>[]) {
   for (const element of elements) {
     const priceText = element.text().trim();
 
     if(priceText) {
       const cleanPrice = priceText.replace(/[^\d.]/g, '');
 
-      let firstPrice; 
+      let firstPrice;
 
       if (cleanPrice) {
         firstPrice = cleanPrice.match(/\d+\.\d{2}/)?.[0];
-      } 
+      }
 
       return firstPrice || cleanPrice;
     }
@@ -29,12 +31,12 @@ export function extractPrice(...elements: any) {
   return '';
 }
 
-export function extractCurrency(element: any) {
+export function extractCurrency(element: Cheerio<Element>) {
   const currencyText = element.text().trim().slice(0, 1);
   return currencyText ? currencyText : "";
 }
 
-export function extractDescription($: any) {
+export function extractDescription($: CheerioAPI) {
   const selectors = [
     "#feature-bullets ul li span.a-list-item",
     ".a-unordered-list .a-list-item",
@@ -46,28 +48,28 @@ export function extractDescription($: any) {
     const elements = $(selector);
     if (elements.length > 0) {
       const textContent = elements
-        .map((_: any, element: any) => {
-          let text = $(element).text().trim();
-          text = text.replace(/\(function\(\)[^\}]*\}\);/g, ''); 
-          text = text.replace(/P\.when\([^\)]*\);/g, ''); 
-          text = text.replace(/\.review-text-read-more[^\n]*$/gm, ''); 
-          text = text.replace(/Read more|Helpful|Report/g, ''); 
-          text = text.replace(/\s+/g, ' '); 
+        .map((_, element) => {
+          let text = $(element as Element).text().trim();
+          text = text.replace(/\(function\(\)[^\}]*\}\);/g, '');
+          text = text.replace(/P\.when\([^\)]*\);/g, '');
+          text = text.replace(/\.review-text-read-more[^\n]*$/gm, '');
+          text = text.replace(/Read more|Helpful|Report/g, '');
+          text = text.replace(/\s+/g, ' ');
           return text;
         })
         .get()
         .filter((text: string) => text.length > 10)
         .join(". ");
-      
+
       let cleanText = textContent
-        .replace(/\.\s*\./g, '.') 
-        .replace(/\s+/g, ' ') 
+        .replace(/\.\s*\./g, '.')
+        .replace(/\s+/g, ' ')
         .trim();
-      
+
       if (cleanText.length > 2500) {
         cleanText = cleanText.substring(0, 2500).trim() + '...';
       }
-      
+
       return cleanText;
     }
   }

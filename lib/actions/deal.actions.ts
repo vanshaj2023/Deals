@@ -1,29 +1,29 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import Product from "../models/product.model"; // Using the Product model
+import Product from "../models/product.model";
 import { connectToDB } from "../mongoose";
 import { scrapeAmazonProduct } from "../scraper";
 import { getAveragePrice, getHighestPrice, getLowestPrice } from "../utils";
-import { User } from "@/types";
+import { User, PriceHistoryItem } from "@/types";
 import { generateEmailBody, sendEmail } from "../nodemailer";
 
 export async function scrapeAndStoreDeal(dealUrl: string) {
   if (!dealUrl) return;
 
   try {
-    connectToDB();
+    await connectToDB();
 
     const scrapedDeal = await scrapeAmazonProduct(dealUrl);
 
     if (!scrapedDeal) return;
 
-    let deal = scrapedDeal;
+    let deal = { ...scrapedDeal, priceHistory: [] as PriceHistoryItem[] };
 
     const existingDeal = await Product.findOne({ url: scrapedDeal.url });
 
     if (existingDeal) {
-      const updatedPriceHistory: any = [
+      const updatedPriceHistory: PriceHistoryItem[] = [
         ...existingDeal.priceHistory,
         { price: scrapedDeal.currentPrice, date: new Date() }
       ];
@@ -44,14 +44,15 @@ export async function scrapeAndStoreDeal(dealUrl: string) {
     );
 
     revalidatePath(`/deals/${newDeal._id}`);
-  } catch (error: any) {
-    throw new Error(`Failed to create/update deal: ${error.message}`);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to create/update deal: ${message}`);
   }
 }
 
 export async function getDealById(dealId: string) {
   try {
-    connectToDB();
+    await connectToDB();
 
     const deal = await Product.findOne({ _id: dealId });
 
@@ -59,25 +60,25 @@ export async function getDealById(dealId: string) {
 
     return deal;
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
 
 export async function getAllDeals() {
   try {
-    connectToDB();
+    await connectToDB();
 
-    const deals = await Product.find({ discountRate: { $gt: 0 } }); // Deals have a discount rate greater than 0
+    const deals = await Product.find({ discountRate: { $gt: 0 } });
 
     return deals;
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
 
 export async function getSimilarDeals(dealId: string) {
   try {
-    connectToDB();
+    await connectToDB();
 
     const currentDeal = await Product.findById(dealId);
 
@@ -90,7 +91,7 @@ export async function getSimilarDeals(dealId: string) {
 
     return similarDeals;
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
 
@@ -112,6 +113,6 @@ export async function addUserEmailToDeal(dealId: string, userEmail: string) {
       await sendEmail(emailContent, [userEmail]);
     }
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 }
