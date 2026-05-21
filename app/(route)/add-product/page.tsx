@@ -153,7 +153,7 @@ const AddProductPage = () => {
         </button>
 
         <p className="text-center text-xs font-semibold" style={{ color: 'var(--muted)' }}>
-          No target? We'll default to 10% below the current price.
+          No target? We&apos;ll default to 10% below the current price.
         </p>
       </form>
 

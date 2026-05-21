@@ -211,7 +211,7 @@ function LoginForm() {
         </div>
 
         <p className="text-sm text-center mt-5" style={{ color: 'var(--muted)' }}>
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link href="/register" className="font-semibold" style={{ color: 'var(--accent)' }}>
             Create one free
           </Link>

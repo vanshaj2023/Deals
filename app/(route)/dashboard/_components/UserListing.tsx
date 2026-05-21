@@ -83,7 +83,7 @@ const PendingCard = ({ tracking, onDelete }: { tracking: TrackedProduct; onDelet
 
       <div className="flex items-center justify-between mt-auto pt-1">
         <span className="text-[11px] font-medium" style={{ color: 'var(--muted)' }}>
-          You'll get an email when ready
+          You&apos;ll get an email when ready
         </span>
         <button
           onClick={onDelete}
@@ -232,7 +232,7 @@ const UserListing = () => {
               No products tracked yet
             </h2>
             <p className="text-base mb-6 max-w-xs" style={{ color: 'var(--muted)' }}>
-              Start tracking a product and we'll alert you the moment the price drops to your target.
+              Start tracking a product and we&apos;ll alert you the moment the price drops to your target.
             </p>
             <Link href="/add-product" className="btn-filled">
               <Plus size={16} />

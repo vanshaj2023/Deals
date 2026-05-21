@@ -108,7 +108,7 @@ export default function Home() {
             style={{ color: 'var(--muted)', fontWeight: 420 }}
           >
             Track any product on Amazon, Myntra or Flipkart. Set your price target once and
-            we'll email you the exact moment it drops. No app, no subscription, no noise.
+            we&apos;ll email you the exact moment it drops. No app, no subscription, no noise.
           </p>
 
           <div ref={ctaRef} className="flex items-center gap-3 mb-10 will-anim flex-wrap">
@@ -383,7 +383,7 @@ export default function Home() {
               </div>
               <p className="text-base font-bold mb-2" style={{ color: 'var(--text)' }}>Instant price alerts</p>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-                Set a target price and get an email the exact moment it's hit. Zero manual checking.
+                Set a target price and get an email the exact moment it&apos;s hit. Zero manual checking.
               </p>
             </div>
 
@@ -448,7 +448,7 @@ export default function Home() {
               </div>
               <p className="text-base font-bold mb-2" style={{ color: 'var(--text)' }}>AI product summaries</p>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-                One-line AI summary of any product so you know what you're buying before clicking.
+                One-line AI summary of any product so you know what you&apos;re buying before clicking.
               </p>
             </div>
 
@@ -497,7 +497,7 @@ export default function Home() {
             Ready to stop overpaying?
           </h2>
           <p className="text-lg mb-8 max-w-md mx-auto relative z-10" style={{ color: 'rgba(148,163,184,0.9)' }}>
-            Add your first product in under a minute. It's free and always will be.
+            Add your first product in under a minute. It&apos;s free and always will be.
           </p>
           <button
             onClick={() => router.push(isSignedIn ? '/dashboard' : '/login')}

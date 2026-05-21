@@ -241,7 +241,7 @@ export default function SettingsPage() {
                 Default alert threshold
               </p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
-                Alert when price drops by this % — used when you haven't set a target price
+                Alert when price drops by this % — used when you haven&apos;t set a target price
               </p>
             </div>
           </div>
