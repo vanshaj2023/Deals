@@ -31,8 +31,10 @@ export type NotificationChannel = 'email' | 'telegram' | 'whatsapp';
 export type TrackedProduct = {
   _id: string;
   userId: string;
-  productId: string;
-  product?: Product;
+  productId: string | null;
+  product?: Product | null;
+  status: 'pending' | 'active';
+  pendingUrl: string | null;
   targetPrice: number | null;
   thresholdPercent: number | null;
   channelOverride: NotificationChannel | null;

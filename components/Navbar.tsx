@@ -2,118 +2,119 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import gsap from 'gsap'
 
+const APP_ROUTES = ['/dashboard', '/add-product', '/settings', '/products']
+
 const Navbar = () => {
   const { data: session, status } = useSession()
-  const [welcomeMessage, setWelcomeMessage] = useState('')
   const [showMenu, setShowMenu] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
   const isSignedIn = status === 'authenticated'
   const navRef = useRef<HTMLElement>(null)
-  const welcomeRef = useRef<HTMLDivElement>(null)
+
+  const isAppRoute = APP_ROUTES.some((r) => pathname.startsWith(r))
 
   useEffect(() => {
     if (navRef.current) {
-      gsap.fromTo(
-        navRef.current,
-        { y: -100, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out' }
-      )
+      gsap.fromTo(navRef.current, { y: -20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' })
     }
   }, [])
 
-  useEffect(() => {
-    if (isSignedIn && session?.user) {
-      setWelcomeMessage(`Welcome ${session.user.name}`)
-
-      if (welcomeRef.current) {
-        gsap.fromTo(
-          welcomeRef.current,
-          { opacity: 0, x: -20 },
-          { opacity: 1, x: 0, duration: 0.5, ease: 'power2.out' }
-        )
-
-        gsap.to(welcomeRef.current, {
-          opacity: 0,
-          x: 20,
-          duration: 0.5,
-          delay: 4.5,
-          ease: 'power2.in'
-        })
-      }
-
-      const timer = setTimeout(() => setWelcomeMessage(''), 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [isSignedIn, session])
-
-  const handleButtonClick = () => {
-    router.push(isSignedIn ? '/dashboard' : '/login')
-  }
-
-  const handleSignOut = async () => {
-    await signOut({ redirect: true, callbackUrl: '/' })
-  }
+  if (isAppRoute) return null
 
   return (
-    <header ref={navRef} className="w-full">
-      <nav className="nav">
-        <Link href="/" className="flex items-center gap-1">
-          <Image
-            src="/assets/icons/logo.svg"
-            width={27}
-            height={27}
-            alt="logo"
-          />
-          <p className="nav-logo">
-            Price<span className='text-primary'>IQ</span>
-          </p>
+    <header
+      ref={navRef}
+      className="w-full sticky top-0 z-50 transition-all duration-300"
+      style={{
+        background: 'rgba(248, 250, 252, 0.75)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: '1px solid rgba(226, 232, 240, 0.6)',
+      }}
+    >
+      <nav className="flex items-center justify-between px-6 md:px-16 h-16 max-w-7xl mx-auto">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 group">
+          <Image src="/assets/icons/logo.svg" width={26} height={26} alt="logo" className="transition-transform group-hover:rotate-12 duration-300" />
+          <span className="font-bold text-lg font-spaceGrotesk tracking-tight" style={{ color: 'var(--text)' }}>
+            Price<span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">IQ</span>
+          </span>
         </Link>
 
-        <div className="flex items-center gap-3">
-          {welcomeMessage && (
-            <div ref={welcomeRef} className="font-bold duration-500">
-              {welcomeMessage}
-            </div>
-          )}
-
-          <button
-            className="bg-black hover:bg-black-100 text-white font-bold py-2 px-4 rounded-full"
-            onClick={handleButtonClick}
-          >
-            {isSignedIn ? 'Dashboard' : 'Login'}
-          </button>
-
-          {isSignedIn && (
-            <div className="relative">
+        {/* Right side */}
+        <div className="flex items-center gap-2">
+          {isSignedIn ? (
+            <>
               <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="flex items-center gap-2"
+                onClick={() => router.push('/dashboard')}
+                className="btn-outlined !h-9 !px-4"
               >
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-semibold">
-                  {session?.user?.name?.charAt(0).toUpperCase()}
-                </div>
+                Dashboard
               </button>
 
-              {showMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
-                  <div className="px-4 py-2 border-b">
-                    <p className="font-semibold">{session?.user?.name}</p>
-                    <p className="text-sm text-gray-500">{session?.user?.email}</p>
-                  </div>
-                  <button
-                    onClick={handleSignOut}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              )}
-            </div>
+              <div className="relative">
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-sm text-white font-bold ml-1 transition-all duration-300 hover:ring-4 hover:ring-indigo-100"
+                  style={{ background: 'var(--accent-gradient)' }}
+                >
+                  {session?.user?.name?.charAt(0).toUpperCase()}
+                </button>
+
+                {showMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                    <div
+                      className="absolute right-0 mt-2 w-52 z-50 rounded-2xl py-2 overflow-hidden shadow-xl"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.95)',
+                        backdropFilter: 'blur(16px)',
+                        border: '1px solid rgba(226, 232, 240, 0.8)',
+                        boxShadow: 'var(--shadow-3)',
+                      }}
+                    >
+                      <div className="px-4 py-3 border-b" style={{ borderColor: 'rgba(226, 232, 240, 0.5)' }}>
+                        <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>
+                          {session?.user?.name}
+                        </p>
+                        <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--muted)' }}>
+                          {session?.user?.email}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => signOut({ callbackUrl: '/' })}
+                        className="w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-slate-50 font-semibold"
+                        style={{ color: '#EF4444' }}
+                      >
+                        Sign out
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => router.push('/login')}
+                className="btn-text !h-9"
+                style={{ color: 'var(--text-secondary)', fontWeight: 600 }}
+              >
+                Sign in
+              </button>
+              <button
+                onClick={() => router.push('/login')}
+                className="btn-filled !h-9 !px-4"
+              >
+                Get started
+              </button>
+            </>
           )}
         </div>
       </nav>
