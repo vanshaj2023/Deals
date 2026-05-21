@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const LRU = require('lru-cache') as new (opts: { max: number; maxAge: number }) => {
   get(key: string): string | undefined;
   set(key: string, value: string): void;
