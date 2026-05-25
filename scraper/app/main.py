@@ -5,13 +5,15 @@ from fastapi import Depends, FastAPI, HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from .adapters.amazon import AmazonAdapter
+from .adapters.flipkart import FlipkartAdapter
+from .adapters.myntra import MyntraAdapter
 from .config import settings
 from .models import BatchScrapeRequest, HealthResult, ScrapeRequest, ScrapeResult
 
 app = FastAPI(title="PriceIQ Scraper", version="2.0.0")
 security = HTTPBearer()
 
-ADAPTERS = [AmazonAdapter()]
+ADAPTERS = [AmazonAdapter(), MyntraAdapter(), FlipkartAdapter()]
 
 
 def _get_adapter(url: str):
@@ -30,7 +32,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Security(security))
 async def health():
     return HealthResult(
         ok=True,
-        adapters={"amazon": True, "myntra": False, "flipkart": False},
+        adapters={"amazon": True, "myntra": True, "flipkart": True},
     )
 
 
