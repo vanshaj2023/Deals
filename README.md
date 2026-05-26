@@ -18,7 +18,7 @@
 - 🔍 BrightData web scraping with proxy support
 - 📮 Nodemailer email notifications
 - 🔄 Automated cron jobs for price updates
-- 🎨 Tailwind CSS for styling
+- 🎨 Tailwind CSS for styling   
 
 ## 📦 Tech Stack
 
