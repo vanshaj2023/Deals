@@ -43,9 +43,16 @@ export async function POST(req: NextRequest) {
     let product = await Product.findOne({ url: { $in: [job.url, normalizedUrl] } });
 
     if (!product) {
-      const existingForSummary = null; // fresh scrape always
+      // If no scraper pool is configured, fall back to triggering GH Actions
+      const pool = process.env.SCRAPER_POOL ?? process.env.SCRAPER_URL ?? '';
+      if (!pool.trim()) {
+        await ScrapeJob.findByIdAndUpdate(job._id, { status: 'pending' }); // revert claim
+        await triggerGHDispatch();
+        return NextResponse.json({ message: 'No scraper pool configured, dispatched to GH Actions' });
+      }
+
       const scraped = await scrapeProduct(job.url, {
-        wantSummary: !existingForSummary,
+        wantSummary: true,
         timeoutMs: 30_000,
       });
 
@@ -140,5 +147,33 @@ export async function POST(req: NextRequest) {
     const message = err instanceof Error ? err.message : String(err);
     await ScrapeJob.findByIdAndUpdate(job._id, { status: 'failed', error: message });
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+let lastDispatchAt = 0;
+const DISPATCH_COOLDOWN_MS = 2 * 60 * 1000;
+
+async function triggerGHDispatch() {
+  const now = Date.now();
+  if (now - lastDispatchAt < DISPATCH_COOLDOWN_MS) return;
+
+  const ghToken = process.env.GH_DISPATCH_TOKEN;
+  const ghRepo = process.env.GH_REPO;
+  if (!ghToken || !ghRepo) return;
+
+  try {
+    await fetch(`https://api.github.com/repos/${ghRepo}/dispatches`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${ghToken}`,
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ event_type: 'scrape-queue' }),
+    });
+    lastDispatchAt = now;
+  } catch {
+    // non-blocking, GH Actions cron will pick it up on next tick anyway
   }
 }
