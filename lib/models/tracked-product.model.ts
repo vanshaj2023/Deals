@@ -26,9 +26,8 @@ const trackedProductSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// A user can track the same product only once, but while pending productId is null
-// so we scope uniqueness to (userId, productId) only when productId exists via sparse index.
-trackedProductSchema.index({ userId: 1, productId: 1 }, { unique: true, sparse: true });
+// Non-unique index for query performance — uniqueness enforced in app code.
+trackedProductSchema.index({ userId: 1, productId: 1 });
 trackedProductSchema.index({ productId: 1 });
 trackedProductSchema.index({ scrapeJobId: 1 });
 

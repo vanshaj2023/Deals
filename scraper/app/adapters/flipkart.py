@@ -1,9 +1,9 @@
+import json
 import random
 import re
 from datetime import datetime, timezone
 
 import httpx
-from selectolax.parser import HTMLParser
 
 from ..llm import summarize
 from ..models import ScrapeResult
@@ -11,42 +11,83 @@ from .base import BaseAdapter
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
 ]
 
 HEADERS_BASE = {
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
-    "Accept-Encoding": "gzip, deflate, br",
+    "Accept-Encoding": "gzip, deflate",
     "Connection": "keep-alive",
+    "Sec-Ch-Ua": '"Chromium";v="124", "Not A(Brand";v="99"',
+    "Sec-Ch-Ua-Mobile": "?0",
+    "Sec-Ch-Ua-Platform": '"Windows"',
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
     "Upgrade-Insecure-Requests": "1",
-    "DNT": "1",
 }
 
 
-def _text(tree: HTMLParser, selector: str, default: str = "") -> str:
-    node = tree.css_first(selector)
-    return node.text(strip=True) if node else default
+def _parse_jsonld(html: str) -> dict | None:
+    # Stable: <script id="jsonLD" type="application/ld+json">[{...}]</script>
+    m = re.search(
+        r'<script[^>]+id="jsonLD"[^>]*>(\[.*?\]|\{.*?\})</script>',
+        html, re.DOTALL,
+    )
+    if not m:
+        # Fallback: any ld+json with @type Product
+        for sm in re.finditer(
+            r'<script[^>]+type="application/ld\+json"[^>]*>(\[.*?\]|\{.*?\})</script>',
+            html, re.DOTALL,
+        ):
+            try:
+                raw = json.loads(sm.group(1))
+                items = raw if isinstance(raw, list) else [raw]
+                for it in items:
+                    if isinstance(it, dict) and it.get("@type") == "Product":
+                        return it
+            except json.JSONDecodeError:
+                continue
+        return None
+    try:
+        raw = json.loads(m.group(1))
+        items = raw if isinstance(raw, list) else [raw]
+        for it in items:
+            if isinstance(it, dict) and it.get("@type") == "Product":
+                return it
+    except json.JSONDecodeError:
+        return None
+    return None
 
 
-def _extract_price(tree: HTMLParser, *selectors: str) -> float:
-    for selector in selectors:
-        node = tree.css_first(selector)
-        if node:
-            raw = re.sub(r"[^\d.]", "", node.text(strip=True))
-            match = re.search(r"\d+\.?\d*", raw)
-            if match:
-                try:
-                    return float(match.group())
-                except ValueError:
-                    continue
-    return 0.0
+def _extract_mrp(html: str) -> tuple[float, float]:
+    """Returns (finalPrice, mrp) from window.__INITIAL_STATE__ blob."""
+    m = re.search(r'"finalPrice":(\d+(?:\.\d+)?),"mrp":(\d+(?:\.\d+)?)', html)
+    if m:
+        return float(m.group(1)), float(m.group(2))
+    return 0.0, 0.0
 
 
-def _extract_json_price(text: str, key: str) -> float:
-    match = re.search(rf'"{key}"\s*:\s*(\d+(?:\.\d+)?)', text)
-    return float(match.group(1)) if match else 0.0
+def _detect_stock(jsonld: dict | None, html: str) -> bool:
+    """Returns True if out of stock."""
+    if jsonld:
+        availability = (jsonld.get("offers") or {}).get("availability", "") or ""
+        if availability:
+            return not availability.endswith("InStock")
+
+    state_match = re.search(r'"availabilityStatus":"([A-Z_]+)"', html)
+    if state_match:
+        return state_match.group(1) != "IN_STOCK"
+
+    lower = html.lower()
+    for phrase in ("currently out of stock", "sold out", "notify me when available", "coming soon"):
+        if phrase in lower:
+            return True
+    return False
 
 
 class FlipkartAdapter(BaseAdapter):
@@ -58,8 +99,9 @@ class FlipkartAdapter(BaseAdapter):
 
         async with httpx.AsyncClient(
             follow_redirects=True,
-            timeout=15.0,
+            timeout=20.0,
             headers=headers,
+            http2=True,
         ) as client:
             resp = await client.get(url)
             resp.raise_for_status()
@@ -68,72 +110,71 @@ class FlipkartAdapter(BaseAdapter):
         if len(html) < 5000:
             raise RuntimeError("Flipkart returned a suspiciously short page (possible block)")
 
-        tree = HTMLParser(html)
+        ld = _parse_jsonld(html)
 
-        title = (
-            _text(tree, "span.VU-ZEz")
-            or _text(tree, "h1.yhB1nd span")
-            or _text(tree, "h1.G6XhRU")
-            or _text(tree, "h1")
-        )
+        # Title
+        title = (ld or {}).get("name", "")
+        if not title:
+            t_match = re.search(r'<meta property="og:title" content="([^"]+)"', html)
+            title = t_match.group(1) if t_match else ""
 
-        current_price = _extract_price(
-            tree,
-            "div.Nx9bqj.CxhGGd",
-            "div.hl05eU div.Nx9bqj",
-            "div._30jeq3._16Jk6d",
-            "div._30jeq3",
-        )
-        original_price = _extract_price(
-            tree,
-            "div.yRaY8j.ZYYwLA",
-            "div.hl05eU div.yRaY8j",
-            "div._3I9_wc._2p6lqe",
-            "div._3I9_wc",
-        ) or current_price
+        # Prices
+        final_price, mrp = _extract_mrp(html)
+        ld_price = float((ld or {}).get("offers", {}).get("price") or 0)
+        current_price = final_price or ld_price
+        original_price = mrp or current_price
+        if current_price <= 0:
+            has_jsonld_tag = "application/ld+json" in html
+            has_initial_state = "__INITIAL_STATE__" in html
+            has_pricing_text = "₹" in html
+            has_app_redirect = "Open in App" in html or "appOnly" in html
+            snippet = re.sub(r"\s+", " ", html[:1200])
+            raise RuntimeError(
+                f"Flipkart price extraction failed. "
+                f"html_len={len(html)} ld_found={ld is not None} "
+                f"has_ldjson_tag={has_jsonld_tag} has_initial_state={has_initial_state} "
+                f"has_rupee={has_pricing_text} app_redirect={has_app_redirect} "
+                f"snippet={snippet[:600]}"
+            )
 
-        discount_raw = (
-            _text(tree, "div.UkUFwK span")
-            or _text(tree, "div._3Ay6Sb._31Dcoz span")
-        )
-        discount_rate = float(re.sub(r"[^\d.]", "", discount_raw) or "0")
-        if discount_rate == 0 and current_price and original_price > current_price:
+        discount_rate = 0.0
+        if original_price > current_price > 0:
             discount_rate = round((original_price - current_price) / original_price * 100, 1)
 
-        img_node = tree.css_first("img._396cs4") or tree.css_first("img._2r_T1I") or tree.css_first("div._3GnUWp img")
-        image = img_node.attributes.get("src", "") if img_node else ""
-        if image and image.startswith("//"):
-            image = "https:" + image
+        # Image
+        image = ""
+        if ld:
+            img_field = ld.get("image")
+            if isinstance(img_field, list) and img_field:
+                image = img_field[0]
+            elif isinstance(img_field, str):
+                image = img_field
+        if not image:
+            im = re.search(r'<meta property="og:image" content="([^"]+)"', html)
+            image = im.group(1) if im else ""
 
-        availability_text = _text(tree, "div._16FRp0").lower()
-        is_out_of_stock = "out of stock" in availability_text or "sold out" in availability_text
+        # Rating + reviews
+        stars = 0.0
+        reviews_count = 0
+        if ld:
+            agg = ld.get("aggregateRating") or {}
+            stars = float(agg.get("ratingValue") or 0)
+            reviews_count = int(agg.get("reviewCount") or agg.get("ratingCount") or 0)
 
-        stars_raw = _text(tree, "div.XQDdHH") or _text(tree, "div._3LWZlK")
-        stars_match = re.search(r"[\d.]+", stars_raw)
-        stars = float(stars_match.group()) if stars_match else 0.0
+        # Category
+        category = (ld or {}).get("category") or "General"
+        if isinstance(category, list):
+            category = category[0] if category else "General"
 
-        reviews_raw = re.sub(r"[^\d]", "", _text(tree, "span.Wphh3N") or _text(tree, "span._2_R_DZ"))
-        reviews_count = int(reviews_raw) if reviews_raw else 0
+        # Stock
+        is_out_of_stock = _detect_stock(ld, html)
 
-        breadcrumb_nodes = tree.css("div._3GIHBu a") or tree.css("div.LtENGf a")
-        if len(breadcrumb_nodes) >= 2:
-            category = breadcrumb_nodes[-2].text(strip=True) or "General"
-        elif breadcrumb_nodes:
-            category = breadcrumb_nodes[-1].text(strip=True) or "General"
-        else:
-            category = "General"
-
-        desc_nodes = (
-            tree.css("div._1mXcCf.RmoJze li")
-            or tree.css("div._2418kt li")
-            or tree.css("div.X3BRps li")
-        )
-        if desc_nodes:
-            texts = [n.text(strip=True) for n in desc_nodes if len(n.text(strip=True)) > 5]
-            description = ". ".join(texts)[:2500]
-        else:
-            desc_node = tree.css_first("div._1AN87F") or tree.css_first("div.RmoJze")
-            description = desc_node.text(strip=True)[:2500] if desc_node else ""
+        # Description
+        description = (ld or {}).get("description") or ""
+        if not description:
+            dm = re.search(r'<meta name="description" content="([^"]+)"', html)
+            description = dm.group(1) if dm else ""
+        description = description[:2500]
 
         summary: str | None = None
         if want_summary and description:
@@ -147,7 +188,7 @@ class FlipkartAdapter(BaseAdapter):
             originalPrice=original_price,
             currency="₹",
             image=image,
-            category=category,
+            category=str(category),
             stars=stars,
             reviewsCount=reviews_count,
             isOutOfStock=is_out_of_stock,

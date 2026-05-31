@@ -83,7 +83,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(partitioned);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
+    console.error('[scrape-tick] ERROR:', error);
+    const message = error instanceof Error ? `${error.message}\n${error.stack}` : String(error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

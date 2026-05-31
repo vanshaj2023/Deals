@@ -11,7 +11,10 @@ const nextConfig = {
       { protocol: 'https', hostname: 'via.placeholder.com' },
       { protocol: 'https', hostname: 'rukminim1.flixcart.com' },
       { protocol: 'https', hostname: 'rukminim2.flixcart.com' },
+      { protocol: 'https', hostname: 'rukmini1.flixcart.com' },
+      { protocol: 'https', hostname: 'rukmini2.flixcart.com' },
       { protocol: 'https', hostname: 'assets.myntassets.com' },
+      { protocol: 'http', hostname: 'assets.myntassets.com' },
     ]
   }
 }

@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ data });
   } catch (error: unknown) {
+    console.error('[GET /api/products] ERROR:', error);
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: message }, { status: 500 });
   }

@@ -13,12 +13,14 @@ const urlCache = new LRU({ max: 500, maxAge: 1000 * 60 * 60 * 2 });
 export function normalizeUrl(url: string): string {
   try {
     const u = new URL(url.trim());
+    // Lowercase only the hostname — paths (Amazon ASINs etc.) are case-sensitive.
+    u.hostname = u.hostname.toLowerCase();
     ['ref', 'tag', 'linkCode', 'linkId', 'th', 'psc', 'smid'].forEach((p) =>
       u.searchParams.delete(p)
     );
-    return u.toString().toLowerCase();
+    return u.toString();
   } catch {
-    return url.trim().toLowerCase();
+    return url.trim();
   }
 }
 

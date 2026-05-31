@@ -95,6 +95,14 @@ export async function POST(req: NextRequest) {
     let isNewProduct = false;
 
     if (!product) {
+      // Validate critical fields before creating
+      if (!currentPrice || currentPrice <= 0) {
+        return NextResponse.json({ error: 'Invalid scrape: missing/zero price' }, { status: 422 });
+      }
+      if (!title) {
+        return NextResponse.json({ error: 'Invalid scrape: missing title' }, { status: 422 });
+      }
+
       // New product from queue — create it and promote pending trackings
       isNewProduct = true;
       const priceHistory: PriceHistoryItem[] = [{ price: currentPrice, date: new Date() }];
@@ -104,15 +112,15 @@ export async function POST(req: NextRequest) {
         source,
         title,
         currentPrice,
-        originalPrice,
-        currency,
-        image,
-        category,
-        stars,
-        reviewsCount,
-        isOutOfStock,
-        discountRate,
-        description,
+        originalPrice: originalPrice || currentPrice,
+        currency: currency || '₹',
+        image: image || 'https://via.placeholder.com/300x300?text=No+Image',
+        category: category || 'General',
+        stars: stars || 0,
+        reviewsCount: reviewsCount || 0,
+        isOutOfStock: isOutOfStock ?? false,
+        discountRate: discountRate || 0,
+        description: description || '',
         summary: summary ?? null,
         priceHistory,
         lowestPrice: currentPrice,
