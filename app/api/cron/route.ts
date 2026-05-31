@@ -1,61 +1,47 @@
-import { NextResponse } from 'next/server';
-import { getLowestPrice, getHighestPrice, getAveragePrice } from '@/lib/utils';
-import { connectToDB } from '@/lib/mongoose';
-import Product from '@/lib/models/product.model';
-import { scrapeProduct } from '@/lib/scraper-client';
-import { dispatchAlertsForProduct } from '@/lib/alerts/dispatch';
-import { PriceHistoryItem } from '@/types';
+import { NextRequest, NextResponse } from 'next/server';
 
-export const maxDuration = 59;
+export const maxDuration = 10;
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET() {
+// Vercel Cron hits this on schedule. We verify the cron secret, then fire a
+// GitHub repository_dispatch so the GH Actions matrix handles the actual
+// scraping (IP rotation, no Vercel timeout pressure).
+export async function GET(req: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (cronSecret) {
+    const auth = req.headers.get('authorization');
+    if (auth !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
+  const dispatched = await triggerGHDispatch();
+
+  return NextResponse.json({
+    message: dispatched ? 'GH Actions dispatch triggered' : 'GH dispatch skipped (not configured)',
+    dispatched,
+  });
+}
+
+async function triggerGHDispatch(): Promise<boolean> {
+  const ghToken = process.env.GH_DISPATCH_TOKEN;
+  const ghRepo = process.env.GH_REPO;
+  if (!ghToken || !ghRepo) return false;
+
   try {
-    await connectToDB();
-
-    const products = await Product.find({});
-
-    if (!products.length) throw new Error('No products found');
-
-    const results = await Promise.all(
-      products.map(async (currentProduct) => {
-        const scrapedProduct = await scrapeProduct(currentProduct.url);
-        if (!scrapedProduct) return null;
-
-        const previousPrice: number = currentProduct.currentPrice;
-
-        const updatedPriceHistory: PriceHistoryItem[] = [
-          ...currentProduct.priceHistory,
-          { price: scrapedProduct.currentPrice, date: new Date() },
-        ];
-
-        const updated = await Product.findOneAndUpdate(
-          { url: scrapedProduct.url },
-          {
-            ...scrapedProduct,
-            priceHistory: updatedPriceHistory,
-            lowestPrice: getLowestPrice(updatedPriceHistory),
-            highestPrice: getHighestPrice(updatedPriceHistory),
-            averagePrice: getAveragePrice(updatedPriceHistory),
-          },
-          { new: true, upsert: true }
-        );
-
-        if (updated) {
-          await dispatchAlertsForProduct(
-            JSON.parse(JSON.stringify(updated)),
-            previousPrice
-          );
-        }
-
-        return updated;
-      })
-    );
-
-    return NextResponse.json({ message: 'Ok', data: results });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    return NextResponse.json({ message: `Failed: ${message}`, error: true });
+    const res = await fetch(`https://api.github.com/repos/${ghRepo}/dispatches`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${ghToken}`,
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ event_type: 'scrape-queue' }),
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
 }
