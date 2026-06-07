@@ -9,6 +9,7 @@ from selectolax.parser import HTMLParser
 
 from ..llm import summarize
 from ..models import ScrapeResult
+from ..proxy import using_proxy, wrap_url
 from .base import BaseAdapter
 
 try:
@@ -135,13 +136,15 @@ async def _fetch_html(url: str) -> str:
     """Fetch with curl_cffi (Akamai-safe) when available, else httpx fallback."""
     headers = {**BROWSER_HEADERS, "User-Agent": random.choice(USER_AGENTS)}
 
+    fetch_url = wrap_url(url)
+
     if _HAS_CURL_CFFI:
         def _sync_get() -> str:
             r = curl_requests.get(
-                url,
+                fetch_url,
                 impersonate="chrome124",
                 headers=headers,
-                timeout=20,
+                timeout=30,
                 allow_redirects=True,
             )
             r.raise_for_status()
@@ -151,16 +154,18 @@ async def _fetch_html(url: str) -> str:
 
     async with httpx.AsyncClient(
         follow_redirects=True,
-        timeout=20.0,
+        timeout=30.0,
         headers=headers,
         http2=True,
     ) as client:
-        # Warm cookies first
-        try:
-            await client.get("https://www.myntra.com/", timeout=10.0)
-        except Exception:
-            pass
-        resp = await client.get(url)
+        # Warm cookies only when hitting Myntra directly — proxied requests
+        # don't share state across calls and a warmup just burns a credit.
+        if not using_proxy():
+            try:
+                await client.get("https://www.myntra.com/", timeout=10.0)
+            except Exception:
+                pass
+        resp = await client.get(fetch_url)
         resp.raise_for_status()
         return resp.text
 

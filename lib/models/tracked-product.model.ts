@@ -20,7 +20,7 @@ const trackedProductSchema = new mongoose.Schema(
       enum: ['email', 'telegram', 'whatsapp', null],
       default: null,
     },
-    paused:      { type: Boolean, default: false },
+    paused:      { type: Boolean, default: true },
     lastAlertAt: { type: Date,    default: null },
   },
   { timestamps: true }

@@ -10,9 +10,11 @@ import type { TrackedProduct } from '@/types';
 import Sparkline from '@/components/Sparkline';
 import {
   Plus, Trash2, ExternalLink, Bell, BellOff,
-  TrendingDown, Star, Clock, Loader2,
+  TrendingDown, Star, Clock, Loader2, Zap,
 } from 'lucide-react';
 import gsap from 'gsap';
+
+const MAX_ACTIVE_TRACKING = 2;
 
 const SkeletonCard = () => (
   <div className="rounded-2xl overflow-hidden border bg-white" style={{ borderColor: 'rgba(226,232,240,0.9)' }}>
@@ -148,11 +150,17 @@ const UserListing = () => {
     } catch { toast.error('Failed to update'); }
   };
 
-  const handlePause = async (id: string, paused: boolean) => {
+  const handleToggleTracking = async (id: string, currentlyPaused: boolean) => {
+    const nextPaused = !currentlyPaused;
     try {
-      await axios.patch(`/api/products/${id}`, { paused: !paused });
-      setTrackings((p) => p.map((t) => t._id === id ? { ...t, paused: !paused } : t));
-    } catch { toast.error('Failed to update'); }
+      await axios.patch(`/api/products/${id}`, { paused: nextPaused });
+      setTrackings((p) => p.map((t) => t._id === id ? { ...t, paused: nextPaused } : t));
+      toast.success(nextPaused ? 'Active tracking off' : 'Active tracking on');
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: string; code?: string } } };
+      const msg = e.response?.data?.error ?? 'Failed to update';
+      toast.error(msg);
+    }
   };
 
   /* ── Header bar ── */
@@ -161,7 +169,8 @@ const UserListing = () => {
   const atTarget = active.filter(
     (t) => t.product && t.targetPrice != null && t.product.currentPrice <= t.targetPrice
   ).length;
-  const pausedCount = active.filter((t) => t.paused).length;
+  const activeTrackingCount = trackings.filter((t) => !t.paused).length;
+  const atLimit = activeTrackingCount >= MAX_ACTIVE_TRACKING;
 
   return (
     <div className="flex flex-col h-full">
@@ -204,12 +213,18 @@ const UserListing = () => {
               <span className="text-xs font-bold" style={{ color: 'var(--success)' }}>{atTarget} at target</span>
             </div>
           )}
-          {pausedCount > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border" style={{ background: 'var(--warning-bg)', borderColor: 'rgba(180,83,9,0.15)' }}>
-              <BellOff size={12} style={{ color: 'var(--warning-text)' }} />
-              <span className="text-xs font-bold" style={{ color: 'var(--warning-text)' }}>{pausedCount} paused</span>
-            </div>
-          )}
+          <div
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border"
+            style={{
+              background: atLimit ? 'var(--warning-bg)' : '#FEF3C7',
+              borderColor: atLimit ? 'rgba(180,83,9,0.25)' : 'rgba(245,158,11,0.2)',
+            }}
+          >
+            <Zap size={12} style={{ color: atLimit ? 'var(--warning-text)' : '#92400E' }} />
+            <span className="text-xs font-bold" style={{ color: atLimit ? 'var(--warning-text)' : '#92400E' }}>
+              {activeTrackingCount}/{MAX_ACTIVE_TRACKING} active tracking
+            </span>
+          </div>
         </div>
       )}
 
@@ -275,11 +290,16 @@ const UserListing = () => {
                   key={tracking._id}
                   className="will-anim flex flex-col rounded-2xl overflow-hidden border bg-white transition-all duration-250"
                   style={{
-                    opacity: tracking.paused ? 0.55 : 1,
-                    borderColor: isAtTarget ? 'rgba(16,185,129,0.3)' : 'rgba(226,232,240,0.9)',
+                    borderColor: isAtTarget
+                      ? 'rgba(16,185,129,0.3)'
+                      : !tracking.paused
+                        ? 'rgba(245,158,11,0.35)'
+                        : 'rgba(226,232,240,0.9)',
                     boxShadow: isAtTarget
                       ? '0 0 0 1px rgba(16,185,129,0.1), 0 4px 16px rgba(16,185,129,0.06)'
-                      : 'var(--shadow-1)',
+                      : !tracking.paused
+                        ? '0 0 0 1px rgba(245,158,11,0.12), 0 4px 16px rgba(245,158,11,0.06)'
+                        : 'var(--shadow-1)',
                   }}
                 >
                   {/* Product image */}
@@ -303,9 +323,10 @@ const UserListing = () => {
                             -{discount}%
                           </span>
                         )}
-                        {tracking.paused && (
-                          <span className="chip" style={{ background: '#F1F5F9', color: '#64748B' }}>
-                            Paused
+                        {!tracking.paused && (
+                          <span className="chip flex items-center gap-1" style={{ background: '#FEF3C7', color: '#92400E' }}>
+                            <Zap size={9} fill="#92400E" stroke="none" />
+                            Tracking
                           </span>
                         )}
                       </div>
@@ -419,14 +440,29 @@ const UserListing = () => {
                       </a>
 
                       <div className="flex items-center gap-0.5">
-                        <button
-                          onClick={() => handlePause(tracking._id, tracking.paused)}
-                          className="icon-btn"
-                          title={tracking.paused ? 'Resume alerts' : 'Pause alerts'}
-                          style={{ color: tracking.paused ? 'var(--success)' : 'var(--muted)' }}
-                        >
-                          {tracking.paused ? <BellOff size={14} /> : <Bell size={14} />}
-                        </button>
+                        {(() => {
+                          const disabled = tracking.paused && atLimit;
+                          const title = tracking.paused
+                            ? (atLimit
+                                ? `Limit reached (${MAX_ACTIVE_TRACKING} max). Disable another product first.`
+                                : 'Enable active tracking (price refresh every 12h)')
+                            : 'Disable active tracking';
+                          return (
+                            <button
+                              onClick={() => !disabled && handleToggleTracking(tracking._id, tracking.paused)}
+                              className="icon-btn"
+                              title={title}
+                              disabled={disabled}
+                              style={{
+                                color: tracking.paused ? 'var(--muted)' : '#D97706',
+                                opacity: disabled ? 0.4 : 1,
+                                cursor: disabled ? 'not-allowed' : 'pointer',
+                              }}
+                            >
+                              {tracking.paused ? <BellOff size={14} /> : <Bell size={14} fill="#D97706" />}
+                            </button>
+                          );
+                        })()}
                         <button
                           onClick={() => handleDelete(tracking._id)}
                           className="icon-btn danger"

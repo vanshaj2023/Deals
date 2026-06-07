@@ -7,6 +7,7 @@ import httpx
 
 from ..llm import summarize
 from ..models import ScrapeResult
+from ..proxy import wrap_url
 from .base import BaseAdapter
 
 USER_AGENTS = [
@@ -103,7 +104,7 @@ class FlipkartAdapter(BaseAdapter):
             headers=headers,
             http2=True,
         ) as client:
-            resp = await client.get(url)
+            resp = await client.get(wrap_url(url))
             resp.raise_for_status()
             html = resp.text
 

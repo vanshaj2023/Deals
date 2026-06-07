@@ -6,6 +6,8 @@ import TrackedProduct from '@/lib/models/tracked-product.model';
 
 type Params = { params: { id: string } };
 
+export const MAX_ACTIVE_TRACKING = 2;
+
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -20,6 +22,25 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   try {
     await connectToDB();
+
+    // Enforce active-tracking cap when user is enabling tracking (paused: false).
+    if (paused === false) {
+      const activeCount = await TrackedProduct.countDocuments({
+        userId: session.user.id,
+        paused: false,
+        _id: { $ne: params.id },
+      });
+
+      if (activeCount >= MAX_ACTIVE_TRACKING) {
+        return NextResponse.json(
+          {
+            error: `You can have at most ${MAX_ACTIVE_TRACKING} products on active tracking. Disable one first.`,
+            code: 'ACTIVE_TRACKING_LIMIT',
+          },
+          { status: 409 }
+        );
+      }
+    }
 
     const tracking = await TrackedProduct.findOneAndUpdate(
       { _id: params.id, userId: session.user.id },

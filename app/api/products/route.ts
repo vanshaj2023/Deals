@@ -141,7 +141,8 @@ export async function POST(req: NextRequest) {
       job = await ScrapeJob.create({ url: normalizedUrl, status: 'pending' });
     }
 
-    // Create a pending TrackedProduct that will be promoted when the worker runs
+    // Create a pending TrackedProduct that will be promoted when the worker runs.
+    // paused: true → user must explicitly enable "Active tracking" (max 2 per user).
     const pendingTracking = await TrackedProduct.create({
       userId:          session.user.id,
       productId:       null,
@@ -150,7 +151,7 @@ export async function POST(req: NextRequest) {
       pendingUrl:      normalizedUrl,
       targetPrice:     body.targetPrice ?? null,
       thresholdPercent: body.thresholdPercent ?? null,
-      paused:          false,
+      paused:          true,
     });
 
     // Fire-and-forget: trigger the worker so it runs in the background.
@@ -191,7 +192,7 @@ async function createActiveTracking(
         status: 'active',
         targetPrice,
         thresholdPercent: thresholdPercent ?? null,
-        paused: false,
+        paused: true,
         scrapeJobId: null,
         pendingUrl: null,
       },

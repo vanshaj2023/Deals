@@ -2,7 +2,7 @@ name: PriceIQ Rotating Scraper Tick
 
 on:
   schedule:
-    - cron: '0 */3 * * *'
+    - cron: '0 0,12 * * *'
   workflow_dispatch:
   repository_dispatch:
     types: [scrape-queue]
@@ -13,8 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      max-parallel: 5
       matrix:
-        index: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        index: [0, 1, 2, 3, 4]
 
     steps:
       - name: Checkout Repository
@@ -42,10 +43,14 @@ jobs:
         env:
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
           SCRAPE_SECRET: ${{ secrets.SCRAPE_SECRET }}
+          SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
         run: |
           if [ -z "$BACKEND_URL" ] || [ -z "$SCRAPE_SECRET" ]; then
             echo "Error: BACKEND_URL or SCRAPE_SECRET is not set in repository secrets."
             echo "Please configure BACKEND_URL and SCRAPE_SECRET in GitHub Settings > Secrets > Actions."
             exit 1
           fi
-          python scraper/cli.py --index ${{ matrix.index }} --total 10 --backend-url "$BACKEND_URL" --secret "$SCRAPE_SECRET"
+          if [ -z "$SCRAPER_API_KEY" ]; then
+            echo "Warning: SCRAPER_API_KEY not set. Requests will hit target sites directly from GH runner IPs and likely get CAPTCHA'd."
+          fi
+          python scraper/cli.py --index ${{ matrix.index }} --total 5 --backend-url "$BACKEND_URL" --secret "$SCRAPE_SECRET"
